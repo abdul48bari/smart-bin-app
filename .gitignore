@@ -1,0 +1,21 @@
+# Node
+node_modules/
+
+# Firebase
+.firebase/
+.firebaserc
+serviceAccountKey.json
+
+# Flutter
+/build/
+.dart_tool/
+.pub-cache/
+
+# Firebase Flutter
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+
+# OS
+.DS_Store
+Thumbs.db
