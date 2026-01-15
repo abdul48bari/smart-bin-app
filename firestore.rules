@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: user must be logged in
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Users can read/write ONLY their own profile
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Bin data is READ-ONLY for apps
+    // Writes only allowed from backend (Cloud Functions)
+    match /bins/{binId}/{document=**} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // FCM tokens
+    match /fcmTokens/{userId}/{document=**} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+  }
+}
