@@ -21,3 +21,6 @@ This repository contains the mobile application and backend services for a smart
 
 ## Status
 🚧 Prototype in development (hardware integration will be added later).
+
+## Contributors
+- Reviewed architecture and setup
