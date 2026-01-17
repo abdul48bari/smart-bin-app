@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "915711779789",
+    "project_id": "smart-bin-app-uowd",
+    "storage_bucket": "smart-bin-app-uowd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:915711779789:android:376749a6e6576caaa61a84",
+        "android_client_info": {
+          "package_name": "com.example.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNZ86UM9Stun0BCe4Sf4q3mJta6v07dgc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
