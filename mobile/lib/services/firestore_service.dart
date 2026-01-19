@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/bin_sub.dart';
 import '../models/alert.dart';
+import '../models/time_filter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 
 class FirestoreService {
@@ -31,5 +34,107 @@ class FirestoreService {
               AlertModel.fromFirestore(doc.id, doc.data()))
           .toList());
 }
+
+    Stream<Map<String, int>> getFullCountsPerSubBin(String binId) {
+  const List<String> allSubBins = [
+    'plastic',
+    'glass',
+    'organic',
+    'cans',
+    'mixed',
+  ];
+
+  return _db
+      .collection('bins')
+      .doc(binId)
+      .collection('events')
+      .where('eventType', isEqualTo: 'BIN_FULL')
+      .snapshots()
+      .map((snapshot) {
+        final Map<String, int> counts = {
+          for (var subBin in allSubBins) subBin: 0,
+        };
+
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+          final subBin = data['subBin'];
+
+          if (subBin != null && counts.containsKey(subBin)) {
+            counts[subBin] = counts[subBin]! + 1;
+          }
+        }
+
+        return counts;
+      });
+}
+
+
+Stream<Map<String, int>> getFullCountsByTimeFilter(
+  String binId,
+  TimeFilter filter,
+) {
+  const List<String> allSubBins = [
+    'plastic',
+    'glass',
+    'organic',
+    'cans',
+    'mixed',
+  ];
+
+  DateTime now = DateTime.now();
+  DateTime startTime;
+
+  switch (filter) {
+    case TimeFilter.day:
+      startTime = DateTime(now.year, now.month, now.day);
+      break;
+    case TimeFilter.week:
+      startTime = now.subtract(const Duration(days: 7));
+      break;
+    case TimeFilter.month:
+      startTime = DateTime(now.year, now.month, 1);
+      break;
+  }
+
+  return _db
+      .collection('bins')
+      .doc(binId)
+      .collection('events')
+      .where('eventType', isEqualTo: 'BIN_FULL')
+      .snapshots()
+      .map((snapshot) {
+        final Map<String, int> counts = {
+          for (var subBin in allSubBins) subBin: 0,
+        };
+
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+
+          // 🔒 Defensive checks (CRITICAL)
+          if (!data.containsKey('timestamp') ||
+              data['timestamp'] is! Timestamp ||
+              !data.containsKey('subBin')) {
+            continue;
+          }
+
+          final Timestamp ts = data['timestamp'];
+          final DateTime eventTime = ts.toDate();
+
+          if (eventTime.isBefore(startTime)) continue;
+
+          final String subBin = data['subBin'];
+
+          if (counts.containsKey(subBin)) {
+            counts[subBin] = counts[subBin]! + 1;
+          }
+        }
+
+        return counts;
+      });
+}
+
+
+
+
 
 }

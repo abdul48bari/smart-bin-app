@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 
 
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -24,8 +25,37 @@ class SmartBinApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Smart Bin',
       theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
+  useMaterial3: true,
+
+  // Apple-style typography
+  fontFamily: 'SF Pro Text',
+
+  textTheme: const TextTheme(
+    headlineLarge: TextStyle(
+      fontSize: 32,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.5,
+    ),
+    headlineMedium: TextStyle(
+      fontSize: 24,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.3,
+    ),
+    bodyLarge: TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w400,
+    ),
+    bodyMedium: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      color: Colors.black54,
+    ),
+  ),
+
+  scaffoldBackgroundColor: const Color(0xFFF6F8F7),
+),
+
+
       home: const HomeScreen(),
     );
   }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
 import '../models/bin_sub.dart';
-import 'alerts_screen.dart';
+import '../widgets/bin_overview_card.dart';
+import '../widgets/bin_analytics_section.dart';
 
 
 class HomeScreen extends StatelessWidget {
@@ -12,68 +13,63 @@ class HomeScreen extends StatelessWidget {
     final FirestoreService firestoreService = FirestoreService();
 
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-  IconButton(
-    icon: const Icon(Icons.warning),
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const AlertsScreen(),
+      body: Container(
+        color: const Color(0xFFF3F7F4),
+        child: StreamBuilder<List<BinSub>>(
+          stream: firestoreService.getSubBins('BIN_001'),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Center(child: Text('Error loading data'));
+            }
+
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final bins = snapshot.data!;
+
+            return SingleChildScrollView(
+  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+  'Smart Bin',
+  style: Theme.of(context).textTheme.headlineLarge,
+),
+const SizedBox(height: 4),
+Text(
+  'Live waste monitoring',
+  style: Theme.of(context).textTheme.bodyMedium,
+),
+
+      const SizedBox(height: 20),
+      BinOverviewCard(
+  binName: 'Bin 1',
+  subBins: bins,
+),
+
+const SizedBox(height: 24),
+
+Text(
+  'Analytics',
+  style: Theme.of(context)
+      .textTheme
+      .headlineMedium
+      ?.copyWith(fontWeight: FontWeight.w700),
+),
+
+
+const SizedBox(height: 12),
+
+BinAnalyticsSection(binId: 'BIN_001'),
+
+    ],
+  ),
+);
+
+          },
         ),
-      );
-    },
-  )
-],
-
-        
-
-
-
-
-        title: const Text('Smart Bin Status'),
-      ),
-      body: StreamBuilder<List<BinSub>>(
-        stream: firestoreService.getSubBins('BIN_001'),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text('Error loading data'));
-          }
-
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final bins = snapshot.data!;
-
-          return ListView.builder(
-            itemCount: bins.length,
-            itemBuilder: (context, index) {
-              final bin = bins[index];
-
-              return ListTile(
-                leading: Icon(
-                  Icons.delete,
-                  color: bin.isFull ? Colors.red : Colors.green,
-                ),
-                title: Text(bin.name.toUpperCase()),
-                subtitle: Text(
-                  'Fill level: ${bin.currentFillPercent}%',
-                ),
-                trailing: bin.isFull
-                    ? const Text(
-                        'FULL',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : const Text('OK'),
-              );
-            },
-          );
-        },
       ),
     );
   }
