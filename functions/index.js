@@ -6,14 +6,6 @@ const db = admin.firestore();
 
 /**
  * POST /ingestBinEvent
- * Body example:
- * {
- *   "binId": "BIN_001",
- *   "subBin": "plastic",
- *   "eventType": "BIN_FULL",
- *   "fillLevel": 92,
- *   "errorCode": null
- * }
  */
 exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
   try {
@@ -30,79 +22,144 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
     }
 
     const binRef = db.collection("bins").doc(binId);
+    const now = admin.firestore.FieldValue.serverTimestamp();
 
-    // 1️⃣ Save event
+    // ===============================
+    // 1️⃣ STORE EVENT (ANALYTICS)
+    // ===============================
     await binRef.collection("events").add({
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      subBin: subBin || null,
+      timestamp: now,
       eventType,
+      subBin: subBin || null,
       fillLevel: typeof fillLevel === "number" ? fillLevel : null,
       errorCode: errorCode || null,
     });
 
-  // 2️⃣ Update sub-bin fill level (if provided)
-  if (subBin && typeof fillLevel === "number") {
-    const isFull = fillLevel >= 90;
+    // ===============================
+    // 🔧 NORMALIZE FILL LEVEL (REUSED)
+    // ===============================
+    let normalizedFill = null;
+    if (typeof fillLevel === "number") {
+      const parsed = Number(fillLevel);
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+        normalizedFill = parsed;
+      }
+    }
 
-    await binRef
-      .collection("subBins")
-      .doc(subBin)
-      .set(
-        {
-          currentFillPercent: fillLevel,
-          isFull: isFull,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-      { merge: true }
-    );
+    // ===============================
+    // ✅ 2️⃣ LEVEL UPDATE (FIXED)
+    // ===============================
+    if (eventType === "LEVEL_UPDATE" && subBin && normalizedFill !== null) {
+      await binRef
+        .collection("subBins")
+        .doc(subBin)
+        .set(
+          {
+            currentFillPercent: normalizedFill,
+            isFull: normalizedFill >= 100,
+            updatedAt: now,
+          },
+          { merge: true }
+        );
 
-  // 3️⃣ Create alert when bin becomes full
-  if (eventType === "BIN_FULL" && isFull) {
-    await binRef.collection("alerts").add({
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      subBin: subBin,
-      alertType: "BIN_FULL",
-      message: `${subBin} bin is full (${fillLevel}%)`,
-      resolved: false,
-      resolvedAt: null,
-    });
-  }
-}
+      return res.status(200).json({
+        status: "LEVEL_UPDATE applied",
+        fillLevel: normalizedFill,
+      });
+    }
 
-// 4️⃣ Create alert for hardware errors
-if (eventType === "HARDWARE_ERROR") {
-  await binRef.collection("alerts").add({
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    subBin: subBin || null,
-    alertType: "HARDWARE_ERROR",
-    message: `Hardware error: ${errorCode || "UNKNOWN"}`,
-    resolved: false,
-    resolvedAt: null,
-  });
-}
+    // ===============================
+    // 3️⃣ BIN FULL (AUTHORITATIVE)
+    // ===============================
+    if (eventType === "BIN_FULL" && subBin) {
+      const fillToUse = normalizedFill ?? 100;
 
-  // 5️⃣ Resolve alerts when bin is emptied
-if (eventType === "BIN_EMPTIED" && subBin) {
-  const activeAlerts = await binRef
-    .collection("alerts")
-    .where("subBin", "==", subBin)
-    .where("resolved", "==", false)
-    .get();
+      // Update live status
+      await binRef
+        .collection("subBins")
+        .doc(subBin)
+        .set(
+          {
+            currentFillPercent: fillToUse,
+            isFull: true,
+            updatedAt: now,
+          },
+          { merge: true }
+        );
 
-  const batch = db.batch();
+      // Create alert ONLY when actually full
+      if (fillToUse >= 100) {
+        await binRef.collection("alerts").add({
+          createdAt: now,
+          subBin: subBin,
+          alertType: "BIN_FULL",
+          message: `${subBin.toUpperCase()} bin is full (${fillToUse}%)`,
+          resolved: false,
+          resolvedAt: null,
+        });
+      }
 
-  activeAlerts.docs.forEach((doc) => {
-    batch.update(doc.ref, {
-      resolved: true,
-      resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-  });
+      return res.status(200).json({
+        status: "BIN_FULL applied",
+        fillLevel: fillToUse,
+      });
+    }
 
-  await batch.commit();
-}
+    // ===============================
+    // 4️⃣ HARDWARE ERROR
+    // ===============================
+    if (eventType === "HARDWARE_ERROR") {
+      await binRef.collection("alerts").add({
+        createdAt: now,
+        subBin: subBin || null,
+        alertType: "HARDWARE_ERROR",
+        message: `Hardware error: ${errorCode || "UNKNOWN"}`,
+        resolved: false,
+        resolvedAt: null,
+      });
 
+      return res.status(200).json({ status: "HARDWARE_ERROR logged" });
+    }
 
-    return res.status(200).json({ status: "event stored successfully" });
+    // ===============================
+    // 5️⃣ BIN EMPTIED
+    // ===============================
+    if (eventType === "BIN_EMPTIED" && subBin) {
+      // Resolve active alerts for this sub-bin
+      const activeAlerts = await binRef
+        .collection("alerts")
+        .where("subBin", "==", subBin)
+        .where("resolved", "==", false)
+        .get();
+
+      const batch = db.batch();
+
+      activeAlerts.docs.forEach((doc) => {
+        batch.update(doc.ref, {
+          resolved: true,
+          resolvedAt: now,
+        });
+      });
+
+      await batch.commit();
+
+      // Reset live status
+      await binRef
+        .collection("subBins")
+        .doc(subBin)
+        .set(
+          {
+            currentFillPercent: 0,
+            isFull: false,
+            updatedAt: now,
+          },
+          { merge: true }
+        );
+
+      return res.status(200).json({ status: "BIN_EMPTIED applied" });
+    }
+
+    return res.status(200).json({ status: "event logged only" });
   } catch (err) {
     console.error("ingestBinEvent error:", err);
     return res.status(500).json({ error: "Internal server error" });
