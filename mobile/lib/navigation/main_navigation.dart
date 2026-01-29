@@ -43,50 +43,58 @@ class _MainNavigationState extends State<MainNavigation> {
         child: _pages[_currentIndex],
       ),
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.grey.shade400,
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_rounded),
-              label: "Home",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.delete_outline_rounded),
-              label: "Bins",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart_rounded),
-              label: "Analytics",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              label: "Account",
-            ),
-          ],
-        ),
+  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+  padding: const EdgeInsets.symmetric(vertical: 8),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(28),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.12),
+        blurRadius: 24,
+        offset: const Offset(0, 10),
       ),
+    ],
+  ),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceAround,
+    children: List.generate(4, (index) {
+      final icons = [
+        Icons.dashboard_rounded,
+        Icons.delete_outline_rounded,
+        Icons.bar_chart_rounded,
+        Icons.person_outline_rounded,
+      ];
+
+      final isActive = _currentIndex == index;
+
+      return GestureDetector(
+        onTap: () {
+          setState(() => _currentIndex = index);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive
+                ? const Color(0xFFE6F4F1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Icon(
+            icons[index],
+            size: 24,
+            color: isActive
+                ? const Color(0xFF0F766E)
+                : Colors.black54,
+          ),
+        ),
+      );
+    }),
+  ),
+),
+
     );
   }
 }
