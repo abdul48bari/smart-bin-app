@@ -121,7 +121,7 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
       return res.status(200).json({ status: "HARDWARE_ERROR logged" });
     }
 
-    // ===============================
+// ===============================
     // 5️⃣ BIN EMPTIED
     // ===============================
     if (eventType === "BIN_EMPTIED" && subBin) {
@@ -159,9 +159,23 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
       return res.status(200).json({ status: "BIN_EMPTIED applied" });
     }
 
+    // ===============================
+    // 6️⃣ PIECE COLLECTED (NEW!)
+    // ===============================
+    if (eventType === "PIECE_COLLECTED" && subBin) {
+      // Event is already logged in step 1 (events collection)
+      // No additional actions needed
+      
+      return res.status(200).json({ 
+        status: "PIECE_COLLECTED logged",
+        subBin: subBin,
+        timestamp: now
+      });
+    }
+
     return res.status(200).json({ status: "event logged only" });
-  } catch (err) {
-    console.error("ingestBinEvent error:", err);
+  } catch (error) {
+    console.error("Error ingesting bin event:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
