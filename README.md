@@ -1,26 +1,94 @@
-# Smart Bin Mobile Application
+## Smart Bin Mobile Application
 
-This repository contains the mobile application and backend services for a smart garbage bin system that sorts waste into:
+This repository contains the mobile application and backend services for a Smart Garbage Bin System. The system is designed to monitor, manage, and analyze waste collection in real time.
 
+The smart bin supports waste segregation into the following categories:
 - Organic
 - Glass
 - Plastic
 - Cans
 - Mixed / General
 
+---
+
+## Live Demo
+
+The application is deployed as a web build and can be accessed here:
+
+https://smart-bin-app-eta.vercel.app
+
+This web version is used for testing and demonstration.
+
+---
+
 ## Tech Stack
-- Flutter (Mobile + future Web Portal)
-- Firebase Firestore (Database)
-- Firebase Cloud Functions (API)
-- Firebase Cloud Messaging (Notifications)
 
-## Repository Structure
-- `mobile/` – Flutter application
-- `functions/` – Firebase Cloud Functions (API endpoints)
-- `docs/` – Documentation (architecture + daily progress)
+Frontend:
+- Flutter (mobile-first, web supported)
 
-## Status
-🚧 Prototype in development (hardware integration will be added later).
+Backend and Cloud:
+- Firebase Firestore for real-time data storage
+- Firebase Cloud Functions for API endpoints
+- Firebase Cloud Messaging for notifications (planned)
+
+---
+
+## Current Features
+
+Home Page:
+- System-wide overview of all bins
+- Live status indicators
+- Alerts preview
+- Summary and insight widgets
+- Clean and modern dashboard design
+
+Bins Page:
+- List of all registered bins
+- Online and offline status per bin
+- Expandable bin cards
+- Live sub-bin fill levels
+- Per-bin alerts preview
+- Navigation to detailed alerts page
+
+Analytics Page:
+- Event-based analytics
+- Bar charts based on historical bin data
+- Time-based filtering support
+
+Alerts System:
+- Alerts for full bins and hardware errors
+- Automatic resolution when bins are emptied
+- Expandable alert details
+- Alert history per bin
+
+Backend API:
+- Central ingestion endpoint for bin events
+- Supports level updates, bin full, bin emptied, and hardware errors
+- Maintains live bin state, alerts, and analytics data
+
+---
+
+## Hardware Integration
+
+The following components are planned for future integration:
+- Raspberry Pi controller
+- Fill-level sensors
+- Camera-based waste classification
+- Wi-Fi based API communication
+
+---
+
+## Project Status
+
+Prototype in active development.
+
+Core application structure, UI, and backend logic are complete. Hardware integration is pending.
+
+---
 
 ## Contributors
-- Reviewed architecture and setup
+
+- Designed and reviewed system architecture - @amer
+- Developed mobile application UI and logic - @Umar
+- Implemented backend API and database structure - @Asim
+
