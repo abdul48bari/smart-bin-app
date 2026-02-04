@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/app_colors.dart';
 
 class HorizontalBarChart extends StatelessWidget {
   final Map<String, int> data;
@@ -30,14 +31,14 @@ class HorizontalBarChart extends StatelessWidget {
     final total = data.values.fold(0, (sum, count) => sum + count);
     
     if (total == 0) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Text(
             "No data available for this period",
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: Colors.black54,
+              color: AppColors.textSecondary(context),
             ),
           ),
         ),
@@ -67,9 +68,7 @@ class HorizontalBarChart extends StatelessWidget {
   }
 }
 
-// =========================
 // BAR ROW
-// =========================
 class _BarRow extends StatefulWidget {
   final String label;
   final int count;
@@ -133,6 +132,8 @@ class _BarRowState extends State<_BarRow>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: Column(
@@ -158,10 +159,10 @@ class _BarRowState extends State<_BarRow>
               Expanded(
                 child: Text(
                   widget.label.toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
-                    color: Colors.black,
+                    color: AppColors.textPrimary(context),
                   ),
                 ),
               ),
@@ -183,23 +184,25 @@ class _BarRowState extends State<_BarRow>
               const SizedBox(width: 6),
               Text(
                 "(${(widget.percentage * 100).round()}%)",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black54,
+                  color: AppColors.textSecondary(context),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
           
-          // Animated bar
+          // Animated bar with glow in dark mode
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Container(
               height: 14,
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: isDark 
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: AnimatedBuilder(
@@ -221,8 +224,8 @@ class _BarRowState extends State<_BarRow>
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: widget.color.withOpacity(0.3),
-                            blurRadius: 8,
+                            color: widget.color.withOpacity(isDark ? 0.5 : 0.3),
+                            blurRadius: isDark ? 12 : 8,
                             offset: const Offset(0, 2),
                           ),
                         ],

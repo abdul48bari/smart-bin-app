@@ -2,33 +2,35 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AlertModel {
   final String id;
-  final String binId;
-  final String subBin;
-  final String alertType;
   final String message;
-  final bool resolved;
+  final String severity;
   final DateTime createdAt;
+  final bool isResolved;  // ← NEW FIELD
 
   AlertModel({
     required this.id,
-    required this.binId,
-    required this.subBin,
-    required this.alertType,
     required this.message,
-    required this.resolved,
+    required this.severity,
     required this.createdAt,
+    this.isResolved = false,  // ← DEFAULT FALSE
   });
 
   factory AlertModel.fromFirestore(String id, Map<String, dynamic> data) {
     return AlertModel(
       id: id,
-      binId: data['binId'] ?? '',
-      subBin: data['subBin'] ?? '',
-      alertType: data['alertType'] ?? '',
-      message: data['message'] ?? '',
-      resolved: data['resolved'] ?? false,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ??
-          DateTime.fromMillisecondsSinceEpoch(0),
+      message: data['message'] ?? 'Unknown alert',
+      severity: data['severity'] ?? 'info',
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isResolved: data['isResolved'] ?? false,  // ← READ FROM FIRESTORE
     );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'message': message,
+      'severity': severity,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'isResolved': isResolved,  // ← SAVE TO FIRESTORE
+    };
   }
 }

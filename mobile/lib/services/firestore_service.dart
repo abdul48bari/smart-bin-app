@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/bin_sub.dart';
 import '../models/alert.dart';
 import '../models/time_filter.dart';
+import 'dart:async';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -21,6 +22,7 @@ class FirestoreService {
 
   // ================= ALERTS =================
 
+  // Get ALL alerts (for bins page - shows history)
   Stream<List<AlertModel>> getActiveAlerts(String binId) {
     return _db
         .collection('bins')
@@ -29,7 +31,22 @@ class FirestoreService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          print('ALERT DOCS COUNT: ${snapshot.docs.length}');
+          return snapshot.docs
+              .map((doc) => AlertModel.fromFirestore(doc.id, doc.data()))
+              .toList();
+        });
+  }
+
+  // Get ONLY UNRESOLVED alerts (for home page)
+  Stream<List<AlertModel>> getUnresolvedAlerts(String binId) {
+    return _db
+        .collection('bins')
+        .doc(binId)
+        .collection('alerts')
+        .where('isResolved', isEqualTo: false)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
           return snapshot.docs
               .map((doc) => AlertModel.fromFirestore(doc.id, doc.data()))
               .toList();
@@ -197,93 +214,137 @@ class FirestoreService {
     });
   }
 
-  // Get total pieces collected across ALL bins - FIXED VERSION
-  Stream<Map<String, int>> getAllBinsPieceCount(TimeFilter filter) {
-    const List<String> allSubBins = [
-      'plastic',
-      'glass',
-      'organic',
-      'cans',
-      'mixed',
-    ];
+// INSTANT FILTER CHANGES + Real-time updates every 2 seconds
 
-    DateTime now = DateTime.now();
-    DateTime startTime;
+StreamController<Map<String, int>>? _pieceCountController;
+TimeFilter? _currentFilter;
+Timer? _refreshTimer;
 
-    switch (filter) {
-      case TimeFilter.day:
-        startTime = now.subtract(const Duration(hours: 24));
-        break;
-      case TimeFilter.week:
-        startTime = now.subtract(const Duration(days: 7));
-        break;
-      case TimeFilter.month:
-        startTime = now.subtract(const Duration(days: 30));
-        break;
-    }
+Stream<Map<String, int>> getAllBinsPieceCount(TimeFilter filter) {
+  const List<String> allSubBins = ['plastic', 'glass', 'organic', 'cans', 'mixed'];
 
-    print('🔍 getAllBinsPieceCount called with filter: $filter');
-    print('🔍 Start time: $startTime');
+  // If filter changed or first call, reset everything
+  if (_currentFilter != filter || _pieceCountController == null) {
+    _currentFilter = filter;
+    _refreshTimer?.cancel();
+    _pieceCountController?.close();
+    _pieceCountController = StreamController<Map<String, int>>.broadcast();
 
-    // Query BIN_001 events directly (simpler approach)
-    return _db
-        .collection('bins')
-        .doc('BIN_001')
-        .collection('events')
-        .where('eventType', isEqualTo: 'PIECE_COLLECTED')
-        .snapshots()
-        .map((snapshot) {
-      print('🔍 Total events in snapshot: ${snapshot.docs.length}');
+    // Fetch data immediately on filter change
+    _fetchPieceData(filter, allSubBins);
 
-      final Map<String, int> totalCounts = {
-        for (var subBin in allSubBins) subBin: 0,
-      };
+    // Then refresh every 2 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      _fetchPieceData(filter, allSubBins);
+    });
+  }
 
-      int filteredOut = 0;
-      int counted = 0;
+  return _pieceCountController!.stream;
+}
 
-      for (final eventDoc in snapshot.docs) {
+Future<void> _fetchPieceData(TimeFilter filter, List<String> allSubBins) async {
+  final Map<String, int> totalCounts = {
+    for (var subBin in allSubBins) subBin: 0,
+  };
+
+  // Recalculate time filter
+  final DateTime now = DateTime.now();
+  final DateTime startTime;
+
+  switch (filter) {
+    case TimeFilter.day:
+      startTime = now.subtract(const Duration(hours: 24));
+      break;
+    case TimeFilter.week:
+      startTime = now.subtract(const Duration(days: 7));
+      break;
+    case TimeFilter.month:
+      startTime = now.subtract(const Duration(days: 30));
+      break;
+  }
+
+  try {
+    // Get all bins
+    final binsSnapshot = await _db.collection('bins').get();
+
+    // Query each bin's events
+    for (var binDoc in binsSnapshot.docs) {
+      final binId = binDoc.id;
+      
+      final eventsSnapshot = await _db
+          .collection('bins')
+          .doc(binId)
+          .collection('events')
+          .where('eventType', isEqualTo: 'PIECE_COLLECTED')
+          .get();
+
+      for (var eventDoc in eventsSnapshot.docs) {
         final data = eventDoc.data();
-
-        print('🔍 Event data: ${data.toString().substring(0, data.toString().length > 100 ? 100 : data.toString().length)}...');
-
-        if (!data.containsKey('timestamp')) {
-          print('⚠️ Event missing timestamp');
-          continue;
-        }
-
-        if (!data.containsKey('subBin')) {
-          print('⚠️ Event missing subBin');
-          continue;
-        }
-
-        if (data['timestamp'] is! Timestamp) {
-          print('⚠️ Timestamp is not a Timestamp object: ${data['timestamp']}');
-          continue;
-        }
+        
+        if (!data.containsKey('timestamp') ||
+            data['timestamp'] is! Timestamp ||
+            !data.containsKey('subBin')) continue;
 
         final DateTime eventTime = (data['timestamp'] as Timestamp).toDate();
-        print('🔍 Event time: $eventTime');
-
-        if (eventTime.isBefore(startTime)) {
-          filteredOut++;
-          continue;
-        }
+        if (eventTime.isBefore(startTime)) continue;
 
         final String subBin = data['subBin'];
         if (totalCounts.containsKey(subBin)) {
           totalCounts[subBin] = totalCounts[subBin]! + 1;
-          counted++;
         }
       }
+    }
 
-      print('🔍 Filtered out (too old): $filteredOut');
-      print('🔍 Counted: $counted');
-      print('🔍 Final counts: $totalCounts');
-
-      return totalCounts;
-    });
+    // Emit the data
+    if (_pieceCountController != null && !_pieceCountController!.isClosed) {
+      _pieceCountController!.add(totalCounts);
+    }
+  } catch (e) {
+    print('Error fetching piece data: $e');
   }
 }
 
+Stream<List<AlertModel>> getRecentActiveAlerts(String binId) {
+  final DateTime yesterday = DateTime.now().subtract(const Duration(hours: 24));
+  
+  return _db
+      .collection('bins')
+      .doc(binId)
+      .collection('alerts')
+      .where('createdAt', isGreaterThan: Timestamp.fromDate(yesterday))
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snapshot) {
+        return snapshot.docs
+            .map((doc) => AlertModel.fromFirestore(doc.id, doc.data()))
+            .where((alert) => !alert.isResolved)
+            .toList();
+      });
+}
 
+  // ================= BIN STATUS UPDATE =================
+  
+  // REPLACE the updateBinStatus function in firestore_service.dart with this:
+
+/// Update bin status (online, offline, maintenance)
+Future<void> updateBinStatus(String binId, String newStatus) async {
+  try {
+    print('🔄 Updating $binId to $newStatus...');
+    
+    await _db.collection('bins').doc(binId).update({
+      'status': newStatus,
+    });
+    
+    print('✅ Status updated successfully!');
+  } catch (e) {
+    print('❌ Error updating status: $e');
+    throw Exception('Failed to update bin status: $e');
+  }
+}
+
+// Add this method to clean up when service is disposed (optional but good practice)
+void dispose() {
+  _refreshTimer?.cancel();
+  _pieceCountController?.close();
+}
+}

@@ -94,7 +94,9 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
           subBin: subBin,
           alertType: "BIN_FULL",
           message: `${subBin.toUpperCase()} bin is full (${fillToUse}%)`,
+          severity: "warning",
           resolved: false,
+          isResolved: false,  // ← ADDED FOR FLUTTER APP!
           resolvedAt: null,
         });
       }
@@ -114,14 +116,16 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
         subBin: subBin || null,
         alertType: "HARDWARE_ERROR",
         message: `Hardware error: ${errorCode || "UNKNOWN"}`,
+        severity: "error",
         resolved: false,
+        isResolved: false,  // ← ADDED FOR FLUTTER APP!
         resolvedAt: null,
       });
 
       return res.status(200).json({ status: "HARDWARE_ERROR logged" });
     }
 
-// ===============================
+    // ===============================
     // 5️⃣ BIN EMPTIED
     // ===============================
     if (eventType === "BIN_EMPTIED" && subBin) {
@@ -137,6 +141,7 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
       activeAlerts.docs.forEach((doc) => {
         batch.update(doc.ref, {
           resolved: true,
+          isResolved: true,  // ← ADDED FOR FLUTTER APP!
           resolvedAt: now,
         });
       });

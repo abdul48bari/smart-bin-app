@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/app_colors.dart';
 
 class VerticalBarChart extends StatelessWidget {
   final Map<String, int> data;
@@ -29,36 +30,14 @@ class VerticalBarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = data.values.fold(0, (sum, count) => sum + count);
     
-    if (total == 0) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Column(
-            children: [
-              Icon(
-                Icons.inbox_rounded,
-                size: 48,
-                color: Colors.black26,
-              ),
-              SizedBox(height: 12),
-              Text(
-                "No pieces collected yet",
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black54,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    // If data is empty, use default order
+    final sortedEntries = data.isEmpty
+        ? ['plastic', 'glass', 'organic', 'cans', 'mixed']
+            .map((key) => MapEntry(key, 0))
+            .toList()
+        : (data.entries.toList()..sort((a, b) => b.value.compareTo(a.value)));
 
-    // Sort by count descending
-    final sortedEntries = data.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final maxCount = sortedEntries.first.value;
+    final maxCount = sortedEntries.isEmpty ? 1 : (sortedEntries.first.value > 0 ? sortedEntries.first.value : 1);
 
     return Column(
       children: [
@@ -93,34 +72,33 @@ class VerticalBarChart extends StatelessWidget {
         
         const SizedBox(height: 24),
         
-        // Circular indicators row
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.center,
-          children: sortedEntries.map((entry) {
-            final type = entry.key;
-            final count = entry.value;
-            final percentage = total > 0 ? (count / total) : 0.0;
-            final color = colors[type] ?? const Color(0xFF0F766E);
+        // Circular indicators row - only show if we have data
+        if (total > 0)
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: sortedEntries.where((e) => e.value > 0).map((entry) {
+              final type = entry.key;
+              final count = entry.value;
+              final percentage = total > 0 ? (count / total) : 0.0;
+              final color = colors[type] ?? const Color(0xFF0F766E);
 
-            return _CircularIndicator(
-              label: type,
-              count: count,
-              percentage: percentage,
-              color: color,
-              icon: _getIcon(type),
-            );
-          }).toList(),
-        ),
+              return _CircularIndicator(
+                label: type,
+                count: count,
+                percentage: percentage,
+                color: color,
+                icon: _getIcon(type),
+              );
+            }).toList(),
+          ),
       ],
     );
   }
 }
 
-// =========================
 // VERTICAL BAR
-// =========================
 class _VerticalBar extends StatefulWidget {
   final String label;
   final int count;
@@ -185,18 +163,20 @@ class _VerticalBarState extends State<_VerticalBar>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Count on top
+        // Count on top - only show if count > 0
         TweenAnimationBuilder<int>(
           tween: IntTween(begin: 0, end: widget.count),
           duration: const Duration(milliseconds: 1000),
           curve: Curves.easeOutCubic,
           builder: (context, value, child) {
             return Text(
-              "$value",
+              value > 0 ? "$value" : "",
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w900,
@@ -207,7 +187,7 @@ class _VerticalBarState extends State<_VerticalBar>
         ),
         const SizedBox(height: 4),
         
-        // Animated bar
+        // Animated bar with glow in dark mode
         Flexible(
           child: AnimatedBuilder(
             animation: _animation,
@@ -232,8 +212,8 @@ class _VerticalBarState extends State<_VerticalBar>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: widget.color.withOpacity(0.3),
-                      blurRadius: 12,
+                      color: widget.color.withOpacity(isDark ? 0.5 : 0.3),
+                      blurRadius: isDark ? 16 : 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -265,10 +245,10 @@ class _VerticalBarState extends State<_VerticalBar>
         // Label
         Text(
           widget.label.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 8,
             fontWeight: FontWeight.w900,
-            color: Colors.black54,
+            color: AppColors.textSecondary(context),
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
@@ -279,9 +259,7 @@ class _VerticalBarState extends State<_VerticalBar>
   }
 }
 
-// =========================
 // CIRCULAR INDICATOR
-// =========================
 class _CircularIndicator extends StatefulWidget {
   final String label;
   final int count;
@@ -320,6 +298,20 @@ class _CircularIndicatorState extends State<_CircularIndicator>
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) _controller.forward();
     });
+  }
+
+  @override
+  void didUpdateWidget(_CircularIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.percentage != widget.percentage || oldWidget.count != widget.count) {
+      _animation = Tween<double>(
+        begin: oldWidget.percentage,
+        end: widget.percentage,
+      ).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+      );
+      _controller.forward(from: 0);
+    }
   }
 
   @override
@@ -402,10 +394,10 @@ class _CircularIndicatorState extends State<_CircularIndicator>
           // Label
           Text(
             widget.label.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w700,
-              color: Colors.black54,
+              color: AppColors.textSecondary(context),
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -415,10 +407,10 @@ class _CircularIndicatorState extends State<_CircularIndicator>
           // Percentage
           Text(
             "${(widget.percentage * 100).round()}%",
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w900,
-              color: Colors.black38,
+              color: AppColors.textSecondary(context).withOpacity(0.6),
             ),
           ),
         ],

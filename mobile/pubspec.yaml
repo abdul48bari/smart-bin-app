@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # UI
   cupertino_icons: ^1.0.8
 
   # Firebase
@@ -18,10 +19,16 @@ dependencies:
   cloud_firestore: ^6.1.1
   firebase_auth: ^6.1.3
 
+  # Storage (optional - for "remember me")
+  shared_preferences: ^2.5.4
+  provider: ^6.1.5+1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
 
 flutter:
   uses-material-design: true

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/firestore_service.dart';
 import '../models/alert.dart';
+import '../services/firestore_service.dart';
+import '../utils/app_colors.dart';
 
 class AlertsScreen extends StatelessWidget {
   final String binId;
@@ -10,148 +11,96 @@ class AlertsScreen extends StatelessWidget {
     required this.binId,
   });
 
-  static const Color _accent = Color(0xFF0F766E);
-  static const Color _accentSoft = Color(0xFFE6F4F1);
-  static const Color _bg = Color(0xFFF6F8F7);
-
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
+    final accent = AppColors.accent(context);
 
     return Scaffold(
-      backgroundColor: _bg,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // =========================
-              // HEADER (PILL STYLE)
-              // =========================
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_accentSoft, Colors.white],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: _accent,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.warning_amber_rounded,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "Alerts",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              binId.replaceAll('_', ' '),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              // =========================
-              // ALERTS LIST
-              // =========================
-              Expanded(
-                child: StreamBuilder<List<AlertModel>>(
-                  stream: firestoreService.getActiveAlerts(binId),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-
-                    final alerts = snapshot.data!;
-
-                    if (alerts.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          "No alerts",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      );
-                    }
-
-                    return ListView.builder(
-                      itemCount: alerts.length,
-                      itemBuilder: (context, index) {
-                        return _AlertCard(alert: alerts[index]);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
+      backgroundColor: AppColors.background(context),
+      appBar: AppBar(
+        title: Text(
+          'Alerts - $binId',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: AppColors.textPrimary(context),
           ),
         ),
+        backgroundColor: AppColors.surface(context),
+        elevation: 0,
+        iconTheme: IconThemeData(color: AppColors.textPrimary(context)),
+      ),
+      body: StreamBuilder<List<AlertModel>>(
+        stream: firestoreService.getActiveAlerts(binId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: accent,
+              ),
+            );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 80,
+                    color: Colors.green.withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No alerts',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textSecondary(context),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'All systems operating normally',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary(context).withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final alerts = snapshot.data!;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: alerts.length,
+            itemBuilder: (context, index) {
+              return _AlertCard(
+                alert: alerts[index],
+                binId: binId,
+              );
+            },
+          );
+        },
       ),
     );
   }
 }
 
-// =========================
-// SINGLE ALERT CARD
-// =========================
+// ALERT CARD WIDGET - CLEAN VERSION
 class _AlertCard extends StatefulWidget {
   final AlertModel alert;
+  final String binId;
 
-  const _AlertCard({required this.alert});
+  const _AlertCard({
+    required this.alert,
+    required this.binId,
+  });
 
   @override
   State<_AlertCard> createState() => _AlertCardState();
@@ -162,6 +111,13 @@ class _AlertCardState extends State<_AlertCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Simple background color - no gradients
+    final backgroundColor = widget.alert.isResolved
+        ? (isDark ? Colors.green.withOpacity(0.15) : Colors.green.withOpacity(0.1))
+        : AppColors.surface(context);
+    
     return GestureDetector(
       onTap: () {
         setState(() => expanded = !expanded);
@@ -170,14 +126,7 @@ class _AlertCardState extends State<_AlertCard> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              Colors.redAccent.withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
@@ -193,17 +142,23 @@ class _AlertCardState extends State<_AlertCard> {
             // HEADER ROW
             Row(
               children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.redAccent,
+                Icon(
+                  widget.alert.isResolved 
+                      ? Icons.check_circle_rounded
+                      : Icons.warning_amber_rounded,
+                  color: widget.alert.isResolved 
+                      ? Colors.green
+                      : Colors.redAccent,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     widget.alert.message,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w900,
-                      color: Colors.black,
+                      color: widget.alert.isResolved 
+                          ? AppColors.textSecondary(context)
+                          : AppColors.textPrimary(context),
                     ),
                   ),
                 ),
@@ -211,7 +166,7 @@ class _AlertCardState extends State<_AlertCard> {
                   expanded
                       ? Icons.expand_less_rounded
                       : Icons.expand_more_rounded,
-                  color: Colors.black54,
+                  color: AppColors.textSecondary(context),
                 ),
               ],
             ),
@@ -227,10 +182,10 @@ class _AlertCardState extends State<_AlertCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _detail("Bin", widget.alert.binId),
-                    _detail("Sub-bin", widget.alert.subBin),
-                    _detail("Type", widget.alert.alertType),
+                    _detail("Bin", widget.binId),
+                    _detail("Severity", widget.alert.severity),
                     _detail("Time", _format(widget.alert.createdAt)),
+                    _detail("Status", widget.alert.isResolved ? "Resolved ✓" : "Active ⚠️"),
                   ],
                 ),
               ),
@@ -247,9 +202,9 @@ class _AlertCardState extends State<_AlertCard> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         "$label: $value",
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w700,
-          color: Colors.black87,
+          color: AppColors.textPrimary(context),
         ),
       ),
     );

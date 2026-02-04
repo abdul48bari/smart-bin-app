@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../services/firestore_service.dart';
 import '../models/time_filter.dart';
 import '../widgets/horizontal_bar_chart.dart';
 import '../widgets/vertical_bar_chart.dart';
+import '../utils/app_colors.dart';
+import '../widgets/glass_container.dart';
+import '../providers/app_state_provider.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -14,48 +18,43 @@ class AnalyticsPage extends StatefulWidget {
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
   static const String _binId = 'BIN_001';
-  static const Color _accent = Color(0xFF0F766E);
-  static const Color _accentSoft = Color(0xFFE6F4F1);
-  static const Color _bg = Color(0xFFF6F8F7);
 
   TimeFilter _selectedFilter = TimeFilter.day;
 
-  // Sub-bin colors
+  // Sub-bin colors (KEEP THESE - they look good in both modes!)
   static const Map<String, Color> _subBinColors = {
-    'plastic': Color(0xFF3B82F6), // Blue
-    'glass': Color(0xFF10B981),   // Green
-    'organic': Color(0xFF92400E), // Brown
-    'cans': Color(0xFFF59E0B),    // Amber
-    'mixed': Color(0xFF8B5CF6),   // Purple
+    'plastic': Color(0xFF3B82F6),
+    'glass': Color(0xFF10B981),
+    'organic': Color(0xFF92400E),
+    'cans': Color(0xFFF59E0B),
+    'mixed': Color(0xFF8B5CF6),
   };
 
   @override
   Widget build(BuildContext context) {
+    final accent = AppColors.accent(context);
+    final accentSoft = AppColors.accentSoft(context);
+    final bg = AppColors.background(context);
+
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: bg,
       body: SafeArea(
+        bottom: false,
         child: RefreshIndicator(
-          color: _accent,
+          color: accent,
           onRefresh: () async {
-            await Future.delayed(const Duration(milliseconds: 450));
+            await Future.delayed(const Duration(milliseconds: 1500));
             setState(() {});
           },
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // =========================
               // HERO HEADER
-              // =========================
               SliverToBoxAdapter(
-                child: _HeroHeader(
-                  accent: _accent,
-                  accentSoft: _accentSoft,
-                ),
+                child: _HeroHeader(accent: accent, accentSoft: accentSoft),
               ),
 
-              // =========================
               // TIME FILTER CHIPS
-              // =========================
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -64,102 +63,120 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     onFilterChanged: (filter) {
                       setState(() => _selectedFilter = filter);
                     },
-                    accent: _accent,
-                    accentSoft: _accentSoft,
+                    accent: accent,
+                    accentSoft: accentSoft,
                   ),
                 ),
               ),
 
-              // =========================
               // TOTAL PIECES COLLECTED (HERO METRIC)
-              // =========================
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: _TotalPiecesCard(
                     binId: _binId,
                     filter: _selectedFilter,
-                    accent: _accent,
-                    accentSoft: _accentSoft,
+                    accent: accent,
+                    accentSoft: accentSoft,
                   ),
                 ),
               ),
 
-              // =========================
-              // PIECES BY TYPE (MAIN CHART - VERTICAL BARS)
-              // =========================
+              // PIECES BY TYPE
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: _PiecesBreakdownCard(
                     binId: _binId,
                     filter: _selectedFilter,
-                    accent: _accent,
-                    accentSoft: _accentSoft,
+                    accent: accent,
+                    accentSoft: accentSoft,
                     colors: _subBinColors,
                   ),
                 ),
               ),
 
-              // =========================
-              // QUICK STATS ROW
-              // =========================
+              // QUICK STATS
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: _QuickStatsRow(
                     binId: _binId,
                     filter: _selectedFilter,
-                    accent: _accent,
-                    accentSoft: _accentSoft,
+                    accent: accent,
+                    accentSoft: accentSoft,
                   ),
                 ),
               ),
 
-              // =========================
-              // BIN FULL EVENTS (SECONDARY CHART)
-              // =========================
+              // BIN FULL EVENTS
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: _BinFullEventsCard(
                     binId: _binId,
                     filter: _selectedFilter,
-                    accent: _accent,
+                    accent: accent,
                     colors: _subBinColors,
                   ),
                 ),
               ),
 
-              // =========================
               // ENVIRONMENTAL IMPACT
-              // =========================
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: _EnvironmentalImpactCard(
-                    binId: _binId,
-                    filter: _selectedFilter,
-                    accent: _accent,
-                    accentSoft: _accentSoft,
+                  child: Consumer<AppStateProvider>(
+                    builder: (context, appState, _) {
+                      return StreamBuilder<dynamic>(
+                        stream: appState.isDemoMode
+                            ? appState.binsStream
+                            : FirebaseFirestore.instance
+                                  .collection('bins')
+                                  .doc(_binId)
+                                  .snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const SizedBox(
+                              height: 100,
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          // Simplified check for demo purposes
+                          final hasContent = appState.isDemoMode
+                              ? (snapshot.data as QuerySnapshot).docs.isNotEmpty
+                              : (snapshot.data as DocumentSnapshot).exists;
+
+                          if (!hasContent) return const SizedBox.shrink();
+
+                          return _EnvironmentalImpactCard(
+                            binId: _binId,
+                            filter: _selectedFilter,
+                            accent: accent,
+                            accentSoft: accentSoft,
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ),
 
-              // =========================
               // TOP PERFORMERS
-              // =========================
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                   child: _TopPerformersCard(
                     binId: _binId,
                     filter: _selectedFilter,
-                    accent: _accent,
+                    accent: accent,
                     colors: _subBinColors,
                   ),
                 ),
               ),
+
+              // Bottom padding
+              const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
             ],
           ),
         ),
@@ -168,29 +185,23 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 }
 
-// =========================
 // HERO HEADER
-// =========================
 class _HeroHeader extends StatelessWidget {
   final Color accent;
   final Color accentSoft;
 
-  const _HeroHeader({
-    required this.accent,
-    required this.accentSoft,
-  });
+  const _HeroHeader({required this.accent, required this.accentSoft});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [accentSoft, Colors.white],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GlassContainer(
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      blur: 20,
+      opacity: 0.1,
+      borderRadius: BorderRadius.circular(24),
       child: Row(
         children: [
           Container(
@@ -201,8 +212,8 @@ class _HeroHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: accent.withOpacity(0.3),
-                  blurRadius: 20,
+                  color: accent.withOpacity(isDark ? 0.5 : 0.3),
+                  blurRadius: isDark ? 24 : 20,
                   offset: const Offset(0, 10),
                 ),
               ],
@@ -214,7 +225,7 @@ class _HeroHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -223,17 +234,17 @@ class _HeroHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
-                    color: Colors.black,
+                    color: AppColors.textPrimary(context),
                     letterSpacing: -0.5,
                   ),
                 ),
-                SizedBox(height: 3),
+                const SizedBox(height: 3),
                 Text(
                   "Waste collection insights",
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black54,
+                    color: AppColors.textSecondary(context),
                   ),
                 ),
               ],
@@ -245,9 +256,7 @@ class _HeroHeader extends StatelessWidget {
   }
 }
 
-// =========================
 // TIME FILTER CHIPS
-// =========================
 class _TimeFilterChips extends StatelessWidget {
   final TimeFilter selectedFilter;
   final Function(TimeFilter) onFilterChanged;
@@ -263,17 +272,21 @@ class _TimeFilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return _AnimatedIn(
       delayMs: 50,
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface(context),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 16,
+              color: isDark
+                  ? accent.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.06),
+              blurRadius: isDark ? 20 : 16,
               offset: const Offset(0, 6),
             ),
           ],
@@ -284,8 +297,8 @@ class _TimeFilterChips extends StatelessWidget {
             final label = filter == TimeFilter.day
                 ? '24 Hrs'
                 : filter == TimeFilter.week
-                    ? '7 Days'
-                    : '30 Days';
+                ? '7 Days'
+                : '30 Days';
 
             return Expanded(
               child: GestureDetector(
@@ -304,7 +317,9 @@ class _TimeFilterChips extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w900,
-                      color: isSelected ? accent : Colors.black54,
+                      color: isSelected
+                          ? accent
+                          : AppColors.textSecondary(context),
                     ),
                   ),
                 ),
@@ -317,9 +332,7 @@ class _TimeFilterChips extends StatelessWidget {
   }
 }
 
-// =========================
 // TOTAL PIECES COLLECTED CARD (HERO)
-// =========================
 class _TotalPiecesCard extends StatelessWidget {
   final String binId;
   final TimeFilter filter;
@@ -336,6 +349,7 @@ class _TotalPiecesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<Map<String, int>>(
       stream: firestoreService.getAllBinsPieceCount(filter),
@@ -349,15 +363,17 @@ class _TotalPiecesCard extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [accentSoft, Colors.white],
+                colors: [accentSoft, AppColors.surface(context)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 20,
+                  color: isDark
+                      ? accent.withOpacity(0.2)
+                      : Colors.black.withOpacity(0.08),
+                  blurRadius: isDark ? 24 : 20,
                   offset: const Offset(0, 8),
                 ),
               ],
@@ -375,8 +391,8 @@ class _TotalPiecesCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: accent.withOpacity(0.3),
-                            blurRadius: 16,
+                            color: accent.withOpacity(isDark ? 0.5 : 0.3),
+                            blurRadius: isDark ? 20 : 16,
                             offset: const Offset(0, 6),
                           ),
                         ],
@@ -388,7 +404,7 @@ class _TotalPiecesCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 14),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -397,16 +413,18 @@ class _TotalPiecesCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: Colors.black54,
+                              color: AppColors.textSecondary(context),
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             "All bins combined",
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: Colors.black38,
+                              color: AppColors.textSecondary(
+                                context,
+                              ).withOpacity(0.7),
                             ),
                           ),
                         ],
@@ -435,14 +453,14 @@ class _TotalPiecesCard extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 8),
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
                         "pieces",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black54,
+                          color: AppColors.textSecondary(context),
                         ),
                       ),
                     ),
@@ -457,9 +475,7 @@ class _TotalPiecesCard extends StatelessWidget {
   }
 }
 
-// =========================
 // PIECES BREAKDOWN CARD (VERTICAL BARS)
-// =========================
 class _PiecesBreakdownCard extends StatelessWidget {
   final String binId;
   final TimeFilter filter;
@@ -478,6 +494,7 @@ class _PiecesBreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<Map<String, int>>(
       stream: firestoreService.getAllBinsPieceCount(filter),
@@ -489,12 +506,14 @@ class _PiecesBreakdownCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface(context),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 20,
+                  color: isDark
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.08),
+                  blurRadius: isDark ? 24 : 20,
                   offset: const Offset(0, 8),
                 ),
               ],
@@ -506,21 +525,18 @@ class _PiecesBreakdownCard extends StatelessWidget {
                   children: [
                     Icon(Icons.category_rounded, color: accent),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       "Breakdown by Type",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                        color: AppColors.textPrimary(context),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
-                VerticalBarChart(
-                  data: data,
-                  colors: colors,
-                ),
+                VerticalBarChart(data: data, colors: colors),
               ],
             ),
           ),
@@ -530,11 +546,7 @@ class _PiecesBreakdownCard extends StatelessWidget {
   }
 }
 
-// Continue in next part...
-
-// =========================
 // BIN FULL EVENTS CARD (SECONDARY)
-// =========================
 class _BinFullEventsCard extends StatelessWidget {
   final String binId;
   final TimeFilter filter;
@@ -551,6 +563,7 @@ class _BinFullEventsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<Map<String, int>>(
       stream: firestoreService.getFullCountsByTimeFilter(binId, filter),
@@ -562,12 +575,14 @@ class _BinFullEventsCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface(context),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 16,
+                  color: isDark
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.06),
+                  blurRadius: isDark ? 20 : 16,
                   offset: const Offset(0, 6),
                 ),
               ],
@@ -579,30 +594,27 @@ class _BinFullEventsCard extends StatelessWidget {
                   children: [
                     Icon(Icons.warning_amber_rounded, color: accent, size: 20),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       "Full Events",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                        color: AppColors.textPrimary(context),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   "Times bins reached 100% capacity",
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black54,
+                    color: AppColors.textSecondary(context),
                   ),
                 ),
                 const SizedBox(height: 16),
-                HorizontalBarChart(
-                  data: data,
-                  colors: colors,
-                ),
+                HorizontalBarChart(data: data, colors: colors),
               ],
             ),
           ),
@@ -612,9 +624,7 @@ class _BinFullEventsCard extends StatelessWidget {
   }
 }
 
-// =========================
 // QUICK STATS ROW
-// =========================
 class _QuickStatsRow extends StatelessWidget {
   final String binId;
   final TimeFilter filter;
@@ -636,7 +646,8 @@ class _QuickStatsRow extends StatelessWidget {
         stream: FirebaseFirestore.instance.collection('bins').snapshots(),
         builder: (context, snapshot) {
           final totalBins = snapshot.data?.docs.length ?? 0;
-          final activeBins = snapshot.data?.docs
+          final activeBins =
+              snapshot.data?.docs
                   .where((d) => (d.data() as Map)['status'] == 'online')
                   .length ??
               0;
@@ -659,7 +670,7 @@ class _QuickStatsRow extends StatelessWidget {
                   value: "$totalBins",
                   icon: Icons.storage_rounded,
                   color: accent,
-                  background: Colors.white,
+                  background: AppColors.surface(context),
                 ),
               ),
               const SizedBox(width: 12),
@@ -669,7 +680,7 @@ class _QuickStatsRow extends StatelessWidget {
                   value: "94%",
                   icon: Icons.speed_rounded,
                   color: accent,
-                  background: Colors.white,
+                  background: AppColors.surface(context),
                 ),
               ),
             ],
@@ -717,19 +728,19 @@ class _MiniStatCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: AppColors.textPrimary(context),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Colors.black54,
+              color: AppColors.textSecondary(context),
             ),
           ),
         ],
@@ -738,9 +749,7 @@ class _MiniStatCard extends StatelessWidget {
   }
 }
 
-// =========================
 // ENVIRONMENTAL IMPACT CARD
-// =========================
 class _EnvironmentalImpactCard extends StatelessWidget {
   final String binId;
   final TimeFilter filter;
@@ -757,13 +766,14 @@ class _EnvironmentalImpactCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<Map<String, int>>(
       stream: firestoreService.getAllBinsPieceCount(filter),
       builder: (context, snapshot) {
         final data = snapshot.data ?? {};
         final total = data.values.fold(0, (sum, count) => sum + count);
-        
+
         // Estimate: avg 50g per piece
         final estimatedKg = (total * 0.05).round();
 
@@ -772,19 +782,20 @@ class _EnvironmentalImpactCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFFD1FAE5),
-                  Colors.white,
-                ],
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF1A3A2A), AppColors.surface(context)]
+                    : [const Color(0xFFD1FAE5), AppColors.surface(context)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 20,
+                  color: isDark
+                      ? const Color(0xFF10B981).withOpacity(0.2)
+                      : Colors.black.withOpacity(0.06),
+                  blurRadius: isDark ? 24 : 20,
                   offset: const Offset(0, 8),
                 ),
               ],
@@ -799,8 +810,10 @@ class _EnvironmentalImpactCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(0.3),
-                        blurRadius: 16,
+                        color: const Color(
+                          0xFF10B981,
+                        ).withOpacity(isDark ? 0.5 : 0.3),
+                        blurRadius: isDark ? 20 : 16,
                         offset: const Offset(0, 6),
                       ),
                     ],
@@ -816,12 +829,12 @@ class _EnvironmentalImpactCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Environmental Impact",
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: Colors.black54,
+                          color: AppColors.textSecondary(context),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -845,14 +858,14 @@ class _EnvironmentalImpactCard extends StatelessWidget {
                             },
                           ),
                           const SizedBox(width: 6),
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
                               "kg sorted",
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.black54,
+                                color: AppColors.textSecondary(context),
                               ),
                             ),
                           ),
@@ -870,9 +883,7 @@ class _EnvironmentalImpactCard extends StatelessWidget {
   }
 }
 
-// =========================
 // TOP PERFORMERS CARD
-// =========================
 class _TopPerformersCard extends StatelessWidget {
   final String binId;
   final TimeFilter filter;
@@ -904,16 +915,17 @@ class _TopPerformersCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<Map<String, int>>(
       stream: firestoreService.getAllBinsPieceCount(filter),
       builder: (context, snapshot) {
         final data = snapshot.data ?? {};
-        
+
         // Sort by count descending
         final sorted = data.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
-        
+
         final topThree = sorted.take(3).toList();
 
         return _AnimatedIn(
@@ -921,12 +933,14 @@ class _TopPerformersCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface(context),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 20,
+                  color: isDark
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.08),
+                  blurRadius: isDark ? 24 : 20,
                   offset: const Offset(0, 8),
                 ),
               ],
@@ -938,23 +952,23 @@ class _TopPerformersCard extends StatelessWidget {
                   children: [
                     Icon(Icons.emoji_events_rounded, color: accent),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       "Top Collected",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                        color: AppColors.textPrimary(context),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 if (topThree.isEmpty)
-                  const Text(
+                  Text(
                     "No data yet",
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Colors.black54,
+                      color: AppColors.textSecondary(context),
                     ),
                   )
                 else
@@ -980,6 +994,15 @@ class _TopPerformersCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: color,
                               borderRadius: BorderRadius.circular(14),
+                              boxShadow: isDark
+                                  ? [
+                                      BoxShadow(
+                                        color: color.withOpacity(0.4),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                    ]
+                                  : null,
                             ),
                             child: Center(
                               child: Text(
@@ -998,10 +1021,10 @@ class _TopPerformersCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               type.toUpperCase(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,
-                                color: Colors.black,
+                                color: AppColors.textPrimary(context),
                               ),
                             ),
                           ),
@@ -1026,17 +1049,12 @@ class _TopPerformersCard extends StatelessWidget {
   }
 }
 
-// =========================
 // ANIMATED IN
-// =========================
 class _AnimatedIn extends StatefulWidget {
   final Widget child;
   final int delayMs;
 
-  const _AnimatedIn({
-    required this.child,
-    this.delayMs = 0,
-  });
+  const _AnimatedIn({required this.child, this.delayMs = 0});
 
   @override
   State<_AnimatedIn> createState() => _AnimatedInState();
@@ -1076,10 +1094,7 @@ class _AnimatedInState extends State<_AnimatedIn>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _opacity,
-      child: SlideTransition(
-        position: _slide,
-        child: widget.child,
-      ),
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }

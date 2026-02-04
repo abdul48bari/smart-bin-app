@@ -61,6 +61,17 @@ Alerts System:
 - Expandable alert details
 - Alert history per bin
 
+Account Page:
+- User profile overview
+- App system settings (Dark Mode, Demo Mode)
+- Security and privacy controls
+- Quick access to bin management
+
+Login & Authentication:
+- Secure email/password login flow
+- Smooth entry animations
+- Admin access control
+
 Backend API:
 - Central ingestion endpoint for bin events
 - Supports level updates, bin full, bin emptied, and hardware errors
