@@ -103,3 +103,4 @@ Core application structure, UI, and backend logic are complete. Hardware integra
 - Developed mobile application UI and logic - @Umar
 - Implemented backend API and database structure - @Asim
 
+"- Mohammed Asim Ahmed Abdullah" 
