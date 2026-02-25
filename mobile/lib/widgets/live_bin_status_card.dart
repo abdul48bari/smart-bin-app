@@ -132,8 +132,8 @@ class _SubBinRow extends StatelessWidget {
     switch (id.toLowerCase()) {
       case 'plastic':
         return Icons.local_drink_rounded;
-      case 'glass':
-        return Icons.wine_bar_rounded;
+      case 'paper':
+        return Icons.description_rounded;
       case 'organic':
         return Icons.eco_rounded;
       case 'cans':

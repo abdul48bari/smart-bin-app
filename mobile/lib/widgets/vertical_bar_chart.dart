@@ -15,8 +15,8 @@ class VerticalBarChart extends StatelessWidget {
     switch (type.toLowerCase()) {
       case 'plastic':
         return Icons.local_drink_rounded;
-      case 'glass':
-        return Icons.wine_bar_rounded;
+      case 'paper':
+        return Icons.description_rounded;
       case 'organic':
         return Icons.eco_rounded;
       case 'cans':
@@ -32,7 +32,7 @@ class VerticalBarChart extends StatelessWidget {
     
     // If data is empty, use default order
     final sortedEntries = data.isEmpty
-        ? ['plastic', 'glass', 'organic', 'cans', 'mixed']
+        ? ['plastic', 'paper', 'organic', 'cans', 'mixed']
             .map((key) => MapEntry(key, 0))
             .toList()
         : (data.entries.toList()..sort((a, b) => b.value.compareTo(a.value)));

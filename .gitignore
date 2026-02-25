@@ -16,6 +16,9 @@ android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 lib/firebase_options.dart
 
+# Documentation
+CLAUDE.md
+
 # OS
 .DS_Store
 Thumbs.db

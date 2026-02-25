@@ -58,7 +58,7 @@ class FirestoreService {
   Stream<Map<String, int>> getFullCountsPerSubBin(String binId) {
     const List<String> allSubBins = [
       'plastic',
-      'glass',
+      'paper',
       'organic',
       'cans',
       'mixed',
@@ -94,7 +94,7 @@ class FirestoreService {
   ) {
     const List<String> allSubBins = [
       'plastic',
-      'glass',
+      'paper',
       'organic',
       'cans',
       'mixed',
@@ -158,7 +158,7 @@ class FirestoreService {
   ) {
     const List<String> allSubBins = [
       'plastic',
-      'glass',
+      'paper',
       'organic',
       'cans',
       'mixed',
@@ -221,7 +221,7 @@ TimeFilter? _currentFilter;
 Timer? _refreshTimer;
 
 Stream<Map<String, int>> getAllBinsPieceCount(TimeFilter filter) {
-  const List<String> allSubBins = ['plastic', 'glass', 'organic', 'cans', 'mixed'];
+  const List<String> allSubBins = ['plastic', 'paper', 'organic', 'cans', 'mixed'];
 
   // If filter changed or first call, reset everything
   if (_currentFilter != filter || _pieceCountController == null) {

@@ -4,7 +4,7 @@ This repository contains the mobile application and backend services for a Smart
 
 The smart bin supports waste segregation into the following categories:
 - Organic
-- Glass
+- Paper
 - Plastic
 - Cans
 - Mixed / General
@@ -102,5 +102,3 @@ Core application structure, UI, and backend logic are complete. Hardware integra
 - Designed and reviewed system architecture - @amer
 - Developed mobile application UI and logic - @Umar
 - Implemented backend API and database structure - @Asim
-
-"- Mohammed Asim Ahmed Abdullah" 

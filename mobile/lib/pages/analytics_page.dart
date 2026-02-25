@@ -24,7 +24,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   // Sub-bin colors (KEEP THESE - they look good in both modes!)
   static const Map<String, Color> _subBinColors = {
     'plastic': Color(0xFF3B82F6),
-    'glass': Color(0xFF10B981),
+    'paper': Color(0xFF10B981),
     'organic': Color(0xFF92400E),
     'cans': Color(0xFFF59E0B),
     'mixed': Color(0xFF8B5CF6),
@@ -901,8 +901,8 @@ class _TopPerformersCard extends StatelessWidget {
     switch (type.toLowerCase()) {
       case 'plastic':
         return Icons.local_drink_rounded;
-      case 'glass':
-        return Icons.wine_bar_rounded;
+      case 'paper':
+        return Icons.description_rounded;
       case 'organic':
         return Icons.eco_rounded;
       case 'cans':
