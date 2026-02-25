@@ -4,7 +4,7 @@ This repository contains the mobile application and backend services for a Smart
 
 The smart bin supports waste segregation into the following categories:
 - Organic
-- Paper
+- Paper (changed from glass to paper after further discussion on real life scenario's in targeted environment)
 - Plastic
 - Cans
 - Mixed / General
@@ -95,6 +95,11 @@ Prototype in active development.
 
 Core application structure, UI, and backend logic are complete. Hardware integration is pending.
 
+(Update): 
+Application is fully functional and has been tested with dummy data for push and pulls through API.
+Implementing AI / Voice Assistant as suggested by our mentor Mr.Tauqeer. 
+Still waiting on Hardware team to complete Raspberry Pi code and Physical Bin structure to integrate everything.
+
 ---
 
 ## Contributors
@@ -102,3 +107,5 @@ Core application structure, UI, and backend logic are complete. Hardware integra
 - Designed and reviewed system architecture - @amer
 - Developed mobile application UI and logic - @Umar
 - Implemented backend API and database structure - @Asim
+
+"- Mohammed Asim Ahmed Abdullah" 
