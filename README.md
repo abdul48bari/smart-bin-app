@@ -95,6 +95,11 @@ Prototype in active development.
 
 Core application structure, UI, and backend logic are complete. Hardware integration is pending.
 
+(Update): 
+Application is fully functional and has been tested with dummy data for push and pulls through API.
+Implementing AI / Voice Assistant as suggested by our mentor Mr.Tauqeer. 
+Still waiting on Hardware team to complete Raspberry Pi code and Physical Bin structure to integrate everything.
+
 ---
 
 ## Contributors
