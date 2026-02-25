@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../pages/home_page.dart';
 import '../pages/bins_page.dart';
 import '../pages/analytics_page.dart';
 import '../pages/account_page.dart';
 import '../utils/app_colors.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/voice_assistant_modal.dart';
 
 class MainAppScreen extends StatefulWidget {
   const MainAppScreen({super.key});
@@ -46,6 +48,8 @@ class _MainAppScreenState extends State<MainAppScreen> {
     return Scaffold(
       extendBody: true, // Allows body to go behind the bottom bar
       body: _getCurrentPage(),
+      floatingActionButton: _buildVoiceAssistantButton(accent, isDark),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         child: GlassContainer(
@@ -124,6 +128,51 @@ class _MainAppScreenState extends State<MainAppScreen> {
               child: Text(label),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoiceAssistantButton(Color accent, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 80), // Position above nav bar
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [accent, accent.withOpacity(0.8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withOpacity(isDark ? 0.5 : 0.3),
+              blurRadius: isDark ? 24 : 20,
+              spreadRadius: isDark ? 2 : 0,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(32),
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const VoiceAssistantModal(),
+              );
+            },
+            child: const Icon(
+              Icons.mic_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
         ),
       ),
     );
