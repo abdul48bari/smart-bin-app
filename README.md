@@ -4,7 +4,7 @@ This repository contains the mobile application and backend services for a Smart
 
 The smart bin supports waste segregation into the following categories:
 - Organic
-- Glass
+- Paper (changed from glass to paper after further discussion on real life scenario's in targeted environment)
 - Plastic
 - Cans
 - Mixed / General
