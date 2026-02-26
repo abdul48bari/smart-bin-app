@@ -1,0 +1,302 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: auto;
+    /* Lenis handles smooth scroll */
+  }
+
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    @apply bg-[#09090b] text-neutral-100;
+    @apply transition-colors duration-700;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: rgba(129, 140, 248, 0.25);
+    color: inherit;
+  }
+}
+
+@layer components {
+
+  /* Glass card — refined */
+  .glass {
+    @apply bg-white/[0.04] backdrop-blur-2xl;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* Gradient text — editorial */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #818cf8 0%, #2dd4bf 50%, #22d3ee 100%);
+  }
+
+  /* Section label */
+  .section-label {
+    @apply inline-flex items-center gap-2 text-xs font-mono font-medium uppercase tracking-[0.25em];
+    @apply text-neutral-500;
+  }
+
+  .section-label::before {
+    content: '';
+    @apply w-8 h-px bg-neutral-600;
+  }
+
+  /* Magnetic hover effect */
+  .magnetic {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Text reveal mask */
+  .text-reveal {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  /* Noise/grain overlay */
+  .grain::after {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.3;
+  }
+
+  /* Bento card */
+  .bento-card {
+    @apply relative rounded-2xl overflow-hidden;
+    @apply bg-neutral-900;
+    @apply border border-neutral-800;
+    @apply transition-all duration-500;
+  }
+
+  .bento-card:hover {
+    @apply border-neutral-700;
+    box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Animated underline for links */
+  .link-underline {
+    @apply relative;
+  }
+
+  .link-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-px;
+    @apply bg-current;
+    transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .link-underline:hover::after {
+    @apply w-full;
+  }
+
+  /* Pill button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-7 py-3.5 rounded-full;
+    @apply bg-white text-neutral-900;
+    @apply text-sm font-semibold;
+    @apply transition-all duration-300;
+    @apply hover:shadow-xl hover:shadow-white/10;
+    @apply hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-7 py-3.5 rounded-full;
+    @apply border border-neutral-700;
+    @apply text-neutral-300;
+    @apply text-sm font-semibold;
+    @apply transition-all duration-300;
+    @apply hover:bg-neutral-800;
+    @apply hover:-translate-y-0.5;
+  }
+
+  /* Horizontal rule with fade */
+  .divider {
+    @apply w-full h-px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06) 50%, transparent);
+  }
+}
+
+/* Custom cursor - hide default on desktop */
+@media (pointer: fine) {
+  * {
+    cursor: none !important;
+  }
+}
+
+/* Custom scrollbar — minimal */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-700/50 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-600;
+}
+
+/* Smooth page entrance */
+@keyframes pageIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+main {
+  animation: pageIn 0.8s ease-out;
+}
+
+/* Marquee */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Number counter glow */
+.counter-glow {
+  text-shadow: 0 0 80px rgba(129, 140, 248, 0.4);
+}
+
+/* Float animation for ambient orbs */
+@keyframes float-slow {
+
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+
+  50% {
+    transform: translateY(-20px) scale(1.03);
+  }
+}
+
+@keyframes float-slow-rev {
+
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+
+  50% {
+    transform: translateY(20px) scale(0.97);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.animate-float-slow-rev {
+  animation: float-slow-rev 10s ease-in-out infinite;
+}
+
+/* Glow pulse for icon orbs */
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px var(--glow-color, rgba(99, 102, 241, 0.3));
+  }
+
+  50% {
+    box-shadow: 0 0 50px var(--glow-color, rgba(99, 102, 241, 0.5));
+  }
+}
+
+/* 3D card perspective base */
+.card-3d {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Timeline node pulse */
+@keyframes node-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+/* Orbit spin */
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-orbit {
+  animation: orbit-spin 4s linear infinite;
+}
+
+/* Flip card preserve 3D */
+.flip-inner {
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.flip-card:hover .flip-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-back {
+  transform: rotateY(180deg);
+}
