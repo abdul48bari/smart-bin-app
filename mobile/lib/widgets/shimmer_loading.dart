@@ -58,17 +58,11 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
           decoration: BoxDecoration(
             borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
               colors: [baseColor, highlightColor, baseColor],
-              stops: [
-                0.1,
-                0.3 +
-                    (_animation.value *
-                        0.3), // Dynamic stop to move the shimmer
-                0.5,
-              ],
-              transform: GradientRotation(_animation.value),
+              stops: const [0.0, 0.5, 1.0],  // Simpler, cleaner animation
+              transform: GradientRotation(_animation.value * 2),
             ),
           ),
         );

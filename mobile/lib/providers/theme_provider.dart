@@ -44,11 +44,11 @@ class ThemeProvider extends ChangeNotifier {
         onPrimary: Colors.black,
         surface: Colors.white,
         onSurface: Colors.black,
-        background: Color(0xFFF6F8F7),
+        background: Color(0xFFFAFAFA),
         onBackground: Colors.black,
       ),
       
-      scaffoldBackgroundColor: const Color(0xFFF6F8F7),
+      scaffoldBackgroundColor: const Color(0xFFFAFAFA),
       
       textTheme: baseTextTheme.copyWith(
         titleLarge: const TextStyle(
@@ -116,13 +116,13 @@ class ThemeProvider extends ChangeNotifier {
       colorScheme: const ColorScheme.dark(
         primary: Color(0xFF14B8A6), // Brighter teal for dark mode
         onPrimary: Colors.white,
-        surface: Color(0xFF1E1E1E),
+        surface: Color(0xFF1A1A1A),
         onSurface: Colors.white,
-        background: Color(0xFF121212),
+        background: Color(0xFF0F0F0F),
         onBackground: Colors.white,
       ),
       
-      scaffoldBackgroundColor: const Color(0xFF121212),
+      scaffoldBackgroundColor: const Color(0xFF0F0F0F),
       
       textTheme: baseTextTheme.copyWith(
         titleLarge: const TextStyle(
@@ -154,7 +154,7 @@ class ThemeProvider extends ChangeNotifier {
       ),
       
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF1E1E1E),
+        backgroundColor: Color(0xFF1A1A1A),
         elevation: 0,
         centerTitle: false,
         iconTheme: IconThemeData(color: Colors.white),

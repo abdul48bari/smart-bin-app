@@ -54,19 +54,15 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
         width: 70,
         height: 35,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [const Color(0xFF1E293B), const Color(0xFF334155)]
-                : [const Color(0xFFFCD34D), const Color(0xFFFBBF24)],
-          ),
+          color: isDark
+              ? const Color(0xFF334155)  // Solid slate for dark mode
+              : const Color(0xFFFBBF24),  // Solid amber for light mode
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.blue.withOpacity(0.3)
-                  : Colors.amber.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),

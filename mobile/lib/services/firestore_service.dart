@@ -53,6 +53,63 @@ class FirestoreService {
         });
   }
 
+  // Get UNRESOLVED SAFETY ALERTS across all bins (for home page banner)
+  Stream<int> getActiveSafetyAlertsCount() {
+    // We query all bins and aggregate unresolved safety alerts
+    return _db.collection('bins').snapshots().asyncMap((binsSnap) async {
+      int count = 0;
+      for (final binDoc in binsSnap.docs) {
+        final alertsSnap = await _db
+            .collection('bins')
+            .doc(binDoc.id)
+            .collection('alerts')
+            .where('isResolved', isEqualTo: false)
+            .where('alertType', whereIn: [
+              'BATTERY_DETECTED',
+              'HARMFUL_GAS',
+              'MOISTURE_DETECTED',
+            ])
+            .get();
+        count += alertsSnap.docs.length;
+      }
+      return count;
+    });
+  }
+
+  // Get active safety alerts for a specific bin (for bins page badges)
+  Stream<List<AlertModel>> getActiveSafetyAlerts(String binId) {
+    return _db
+        .collection('bins')
+        .doc(binId)
+        .collection('alerts')
+        .where('isResolved', isEqualTo: false)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => AlertModel.fromFirestore(doc.id, doc.data()))
+              .where((alert) => alert.isSafetyAlert)
+              .toList();
+        });
+  }
+
+  // ================= MANUAL ALERT RESOLUTION =================
+
+  /// Manually resolve a safety alert (writes directly to Firestore)
+  /// Used for BATTERY_DETECTED, HARMFUL_GAS, MOISTURE_DETECTED, HARDWARE_ERROR
+  Future<void> resolveAlert(String binId, String alertId) async {
+    await _db
+        .collection('bins')
+        .doc(binId)
+        .collection('alerts')
+        .doc(alertId)
+        .update({
+      'resolved': true,
+      'isResolved': true,
+      'resolvedAt': Timestamp.now(),
+    });
+  }
+
   // ================= ANALYTICS - BIN_FULL EVENTS =================
 
   Stream<Map<String, int>> getFullCountsPerSubBin(String binId) {
@@ -223,17 +280,14 @@ Timer? _refreshTimer;
 Stream<Map<String, int>> getAllBinsPieceCount(TimeFilter filter) {
   const List<String> allSubBins = ['plastic', 'paper', 'organic', 'cans', 'mixed'];
 
-  // If filter changed or first call, reset everything
   if (_currentFilter != filter || _pieceCountController == null) {
     _currentFilter = filter;
     _refreshTimer?.cancel();
     _pieceCountController?.close();
     _pieceCountController = StreamController<Map<String, int>>.broadcast();
 
-    // Fetch data immediately on filter change
     _fetchPieceData(filter, allSubBins);
 
-    // Then refresh every 2 seconds
     _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       _fetchPieceData(filter, allSubBins);
     });
@@ -247,7 +301,6 @@ Future<void> _fetchPieceData(TimeFilter filter, List<String> allSubBins) async {
     for (var subBin in allSubBins) subBin: 0,
   };
 
-  // Recalculate time filter
   final DateTime now = DateTime.now();
   final DateTime startTime;
 
@@ -264,13 +317,11 @@ Future<void> _fetchPieceData(TimeFilter filter, List<String> allSubBins) async {
   }
 
   try {
-    // Get all bins
     final binsSnapshot = await _db.collection('bins').get();
 
-    // Query each bin's events
     for (var binDoc in binsSnapshot.docs) {
       final binId = binDoc.id;
-      
+
       final eventsSnapshot = await _db
           .collection('bins')
           .doc(binId)
@@ -280,7 +331,7 @@ Future<void> _fetchPieceData(TimeFilter filter, List<String> allSubBins) async {
 
       for (var eventDoc in eventsSnapshot.docs) {
         final data = eventDoc.data();
-        
+
         if (!data.containsKey('timestamp') ||
             data['timestamp'] is! Timestamp ||
             !data.containsKey('subBin')) continue;
@@ -295,7 +346,6 @@ Future<void> _fetchPieceData(TimeFilter filter, List<String> allSubBins) async {
       }
     }
 
-    // Emit the data
     if (_pieceCountController != null && !_pieceCountController!.isClosed) {
       _pieceCountController!.add(totalCounts);
     }
@@ -306,7 +356,7 @@ Future<void> _fetchPieceData(TimeFilter filter, List<String> allSubBins) async {
 
 Stream<List<AlertModel>> getRecentActiveAlerts(String binId) {
   final DateTime yesterday = DateTime.now().subtract(const Duration(hours: 24));
-  
+
   return _db
       .collection('bins')
       .doc(binId)
@@ -323,18 +373,16 @@ Stream<List<AlertModel>> getRecentActiveAlerts(String binId) {
 }
 
   // ================= BIN STATUS UPDATE =================
-  
-  // REPLACE the updateBinStatus function in firestore_service.dart with this:
 
 /// Update bin status (online, offline, maintenance)
 Future<void> updateBinStatus(String binId, String newStatus) async {
   try {
     print('🔄 Updating $binId to $newStatus...');
-    
+
     await _db.collection('bins').doc(binId).update({
       'status': newStatus,
     });
-    
+
     print('✅ Status updated successfully!');
   } catch (e) {
     print('❌ Error updating status: $e');
@@ -342,7 +390,6 @@ Future<void> updateBinStatus(String binId, String newStatus) async {
   }
 }
 
-// Add this method to clean up when service is disposed (optional but good practice)
 void dispose() {
   _refreshTimer?.cancel();
   _pieceCountController?.close();

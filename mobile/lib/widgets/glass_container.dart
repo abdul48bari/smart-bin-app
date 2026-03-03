@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+/// Glassmorphism container with a clearly visible border.
 class GlassContainer extends StatelessWidget {
   final Widget? child;
   final double blur;
@@ -61,12 +62,11 @@ class GlassContainer extends StatelessWidget {
               borderRadius: shape == BoxShape.circle
                   ? null
                   : (borderRadius ?? BorderRadius.circular(20)),
-              border:
-                  border ??
+              border: border ??
                   Border.all(
-                    color: (isDark ? Colors.white : Colors.white).withOpacity(
-                      isDark ? 0.05 : 0.2,
-                    ),
+                    color: isDark
+                        ? Colors.white.withOpacity(0.14)
+                        : Colors.black.withOpacity(0.10),
                     width: 1.5,
                   ),
             ),

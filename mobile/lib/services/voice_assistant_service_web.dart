@@ -194,7 +194,7 @@ class VoiceAssistantService {
     }
   }
 
-  // Process voice command (same as mobile version)
+  // Process voice command
   Future<String> processCommand(String command) async {
     // First normalize the text to correct common recognition errors
     final normalizedCommand = _normalizeText(command);
@@ -231,7 +231,24 @@ class VoiceAssistantService {
         return await _getAllFillLevels();
       }
 
-      // ALERT COMMANDS
+      // SAFETY ALERT COMMANDS
+      if (_containsAny(lowerCommand, ['safety alert', 'safety warning', 'dangerous'])) {
+        return await _getSafetyAlerts(null);
+      }
+
+      if (_containsAny(lowerCommand, ['battery alert', 'battery detected', 'battery warning'])) {
+        return await _getSafetyAlerts('BATTERY_DETECTED');
+      }
+
+      if (_containsAny(lowerCommand, ['gas alert', 'gas detected', 'harmful gas', 'gas warning'])) {
+        return await _getSafetyAlerts('HARMFUL_GAS');
+      }
+
+      if (_containsAny(lowerCommand, ['moisture alert', 'moisture detected', 'moisture warning', 'water detected'])) {
+        return await _getSafetyAlerts('MOISTURE_DETECTED');
+      }
+
+      // GENERAL ALERT COMMANDS
       if (_containsAny(lowerCommand, ['active alerts', 'any alerts', 'show alerts'])) {
         return await _getActiveAlerts();
       }
@@ -261,36 +278,57 @@ class VoiceAssistantService {
         return await _getMostCollectedType();
       }
 
-      return "I didn't understand that command. Try asking about bin status, fill levels, alerts, or statistics.";
+      return "I didn't understand that command. Try asking about bin status, fill levels, alerts, safety warnings, or statistics.";
     } catch (e) {
       print('Error processing command: $e');
       return "Sorry, I encountered an error processing your request.";
     }
   }
 
-  // Helper methods (same as mobile version)
+  // Helper methods
   bool _containsAny(String text, List<String> keywords) {
     return keywords.any((keyword) => text.contains(keyword));
   }
 
-  // Extract bin number from command (e.g., "bin 2" or "bin number 3")
-  String? _extractBinNumber(String command) {
-    // Look for patterns like "bin 1", "bin number 2", "bin 001", etc.
+  // Word-form numbers to digits
+  static const Map<String, String> _wordNumbers = {
+    'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
+    'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10',
+    'first': '1', 'second': '2', 'third': '3',
+  };
+
+  // Extract bin number from command (e.g., "bin 2", "bin two", "#3")
+  String _extractBinNumber(String command) {
+    // First convert word-form numbers near "bin" to digits
+    String processed = command;
+    _wordNumbers.forEach((word, digit) {
+      processed = processed.replaceAllMapped(
+        RegExp('bin\\s+$word\\b', caseSensitive: false),
+        (m) => 'bin $digit',
+      );
+      processed = processed.replaceAllMapped(
+        RegExp('bin\\s+number\\s+$word\\b', caseSensitive: false),
+        (m) => 'bin number $digit',
+      );
+    });
+
+    // Look for patterns like "bin 1", "bin number 2", "#3", "bin_001"
     final patterns = [
       RegExp(r'bin\s+number\s+(\d+)', caseSensitive: false),
-      RegExp(r'bin\s+(\d+)', caseSensitive: false),
+      RegExp(r'bin\s+#?(\d+)', caseSensitive: false),
+      RegExp(r'#(\d+)'),
       RegExp(r'bin_(\d+)', caseSensitive: false),
+      RegExp(r'number\s+(\d+)', caseSensitive: false),
     ];
 
     for (final pattern in patterns) {
-      final match = pattern.firstMatch(command);
+      final match = pattern.firstMatch(processed);
       if (match != null) {
         final num = match.group(1)!;
-        // Pad with zeros to make BIN_001 format
         return 'BIN_${num.padLeft(3, '0')}';
       }
     }
-    return null; // No bin number specified
+    return 'BIN_001'; // Default to BIN_001 when no bin specified
   }
 
   // Normalize common speech recognition errors
@@ -303,37 +341,45 @@ class VoiceAssistantService {
       r'\bbeans?\b': 'bins',
       r'\bben\b': 'bin',
       r'\bpin\b': 'bin',
+      r'\bbeen\b': 'bin',
+      r'\bbing?\b': 'bin',
       r'\bbins?\b': 'bins',
-      r'\bbin\b': 'bin',
 
       // Cans variations
       r'\bchance\b': 'cans',
-      r'\bcans?\b': 'cans',
-      r'\bcan\b': 'can',
+      r'\bkenz\b': 'cans',
+      r'\bkans\b': 'cans',
 
       // Status variations
-      r'\bstatus\b': 'status',
       r'\bstadiums?\b': 'status',
+      r'\bstattus\b': 'status',
 
       // Fill level variations
-      r'\bfill\b': 'fill',
       r'\bphil\b': 'fill',
       r'\bfeel\b': 'fill',
+      r'\bfield\b': 'fill',
 
       // Alert variations
-      r'\balert\b': 'alert',
       r'\balarms?\b': 'alert',
+      r'\balerts?\b': 'alert',
 
       // Waste types
-      r'\bplastic\b': 'plastic',
-      r'\bpaper\b': 'paper',
-      r'\borganic\b': 'organic',
-      r'\bmixed\b': 'mixed',
+      r'\bplastik\b': 'plastic',
+      r'\bplastick\b': 'plastic',
+      r'\bpapper\b': 'paper',
+      r'\borgenik\b': 'organic',
 
-      // Numbers
-      r'\btoo\b': 'two',
-      r'\bfor\b': 'four',
+      // Safety alert terms
+      r'\bbatter\b': 'battery',
+      r'\bgass\b': 'gas',
+      r'\bmoister\b': 'moisture',
+      r'\bsaftey\b': 'safety',
+      r'\bsafty\b': 'safety',
+
+      // Numbers (only when clearly not valid English)
       r'\bwon\b': 'one',
+      r'\btoo\b': 'two',
+      r'\btree\b': 'three',
     };
 
     // Apply corrections
@@ -419,51 +465,21 @@ class VoiceAssistantService {
         return "Please specify which bin type: plastic, paper, organic, cans, or mixed.";
       }
 
-      // Extract bin number if specified
       final binNumber = _extractBinNumber(command);
 
-      if (binNumber != null) {
-        // Get fill level for specific bin
-        final subBinDoc = await FirebaseFirestore.instance
-            .collection('bins')
-            .doc(binNumber)
-            .collection('subBins')
-            .doc(binType)
-            .get();
+      final subBinDoc = await FirebaseFirestore.instance
+          .collection('bins')
+          .doc(binNumber)
+          .collection('subBins')
+          .doc(binType)
+          .get();
 
-        if (!subBinDoc.exists) {
-          return "No data available for the $binType bin in $binNumber.";
-        }
-
-        final fillPercent = subBinDoc.data()?['currentFillPercent'] ?? 0;
-        return "The $binType bin in $binNumber is at $fillPercent percent capacity.";
-      } else {
-        // Aggregate from all bins
-        final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
-        int totalFill = 0;
-        int binCount = 0;
-
-        for (final bin in binsSnapshot.docs) {
-          final subBinDoc = await FirebaseFirestore.instance
-              .collection('bins')
-              .doc(bin.id)
-              .collection('subBins')
-              .doc(binType)
-              .get();
-
-          if (subBinDoc.exists) {
-            totalFill += (subBinDoc.data()?['currentFillPercent'] ?? 0) as int;
-            binCount++;
-          }
-        }
-
-        if (binCount == 0) {
-          return "No data available for $binType bins.";
-        }
-
-        final avgFill = (totalFill / binCount).round();
-        return "The $binType bins have an average fill level of $avgFill percent across $binCount bins.";
+      if (!subBinDoc.exists) {
+        return "No data available for the $binType bin in $binNumber.";
       }
+
+      final fillPercent = subBinDoc.data()?['currentFillPercent'] ?? 0;
+      return "The $binType bin in $binNumber is at $fillPercent percent capacity.";
     } catch (e) {
       return "Unable to fetch fill level.";
     }
@@ -471,7 +487,6 @@ class VoiceAssistantService {
 
   Future<String> _getMostFullBin() async {
     try {
-      // Check all bins and all sub-bins
       final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
 
       int maxFill = 0;
@@ -531,6 +546,55 @@ class VoiceAssistantService {
       return "Current fill levels: ${levels.join(', ')}.";
     } catch (e) {
       return "Unable to fetch fill levels.";
+    }
+  }
+
+  Future<String> _getSafetyAlerts(String? alertType) async {
+    try {
+      final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
+
+      final safetyTypes = {'BATTERY_DETECTED', 'HARMFUL_GAS', 'MOISTURE_DETECTED'};
+      final targetType = alertType;
+
+      int totalCount = 0;
+      final details = <String>[];
+
+      for (final bin in binsSnapshot.docs) {
+        final alertsSnapshot = await FirebaseFirestore.instance
+            .collection('bins')
+            .doc(bin.id)
+            .collection('alerts')
+            .where('isResolved', isEqualTo: false)
+            .get();
+
+        for (final alert in alertsSnapshot.docs) {
+          final data = alert.data();
+          final type = data['alertType'] as String? ?? '';
+          if (targetType != null ? type == targetType : safetyTypes.contains(type)) {
+            final label = type == 'BATTERY_DETECTED' ? 'battery'
+                : type == 'HARMFUL_GAS' ? 'harmful gas'
+                : 'moisture';
+            details.add("${bin.id}: $label");
+            totalCount++;
+          }
+        }
+      }
+
+      if (totalCount == 0) {
+        if (targetType == 'BATTERY_DETECTED') return "No active battery alerts.";
+        if (targetType == 'HARMFUL_GAS') return "No active harmful gas alerts.";
+        if (targetType == 'MOISTURE_DETECTED') return "No active moisture alerts.";
+        return "No active safety alerts. All clear.";
+      }
+
+      final typeLabel = targetType == 'BATTERY_DETECTED' ? 'battery'
+          : targetType == 'HARMFUL_GAS' ? 'harmful gas'
+          : targetType == 'MOISTURE_DETECTED' ? 'moisture'
+          : 'safety';
+
+      return "There are $totalCount active $typeLabel alerts. ${details.join(', ')}.";
+    } catch (e) {
+      return "Unable to fetch safety alerts.";
     }
   }
 

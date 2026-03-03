@@ -6,7 +6,8 @@ import '../models/time_filter.dart';
 import '../widgets/horizontal_bar_chart.dart';
 import '../widgets/vertical_bar_chart.dart';
 import '../utils/app_colors.dart';
-import '../widgets/glass_container.dart';
+import '../utils/shadows.dart';
+import '../widgets/clean_container.dart';
 import '../providers/app_state_provider.dart';
 
 class AnalyticsPage extends StatefulWidget {
@@ -196,32 +197,31 @@ class _HeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GlassContainer(
+    return CleanContainer(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      blur: 20,
-      opacity: 0.1,
-      borderRadius: BorderRadius.circular(24),
+      elevation: 'medium',
+      borderRadius: BorderRadius.circular(20),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: accent,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: accent.withOpacity(isDark ? 0.5 : 0.3),
-                  blurRadius: isDark ? 24 : 20,
-                  offset: const Offset(0, 10),
+                  color: accent.withOpacity(isDark ? 0.3 : 0.18),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: const Icon(
               Icons.bar_chart_rounded,
               color: Colors.white,
-              size: 26,
+              size: 24,
             ),
           ),
           const SizedBox(width: 14),
@@ -233,7 +233,7 @@ class _HeroHeader extends StatelessWidget {
                   "Analytics",
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary(context),
                     letterSpacing: -0.5,
                   ),
@@ -243,7 +243,7 @@ class _HeroHeader extends StatelessWidget {
                   "Waste collection insights",
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textSecondary(context),
                   ),
                 ),
@@ -272,8 +272,6 @@ class _TimeFilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return _AnimatedIn(
       delayMs: 50,
       child: Container(
@@ -281,15 +279,7 @@ class _TimeFilterChips extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface(context),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? accent.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.06),
-              blurRadius: isDark ? 20 : 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          boxShadow: AppShadows.elevation(context, 'medium'),
         ),
         child: Row(
           children: TimeFilter.values.map((filter) {
@@ -316,7 +306,7 @@ class _TimeFilterChips extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                       color: isSelected
                           ? accent
                           : AppColors.textSecondary(context),
@@ -360,23 +350,16 @@ class _TotalPiecesCard extends StatelessWidget {
         return _AnimatedIn(
           delayMs: 100,
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [accentSoft, AppColors.surface(context)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? accent.withOpacity(0.2)
-                      : Colors.black.withOpacity(0.08),
-                  blurRadius: isDark ? 24 : 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.border(context), width: 1.5),
+              boxShadow: AppShadows.elevation(context, 'large'),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,23 +367,23 @@ class _TotalPiecesCard extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: 52,
-                      height: 52,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
                         color: accent,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: accent.withOpacity(isDark ? 0.5 : 0.3),
-                            blurRadius: isDark ? 20 : 16,
-                            offset: const Offset(0, 6),
+                            color: accent.withOpacity(isDark ? 0.3 : 0.18),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
                       child: const Icon(
                         Icons.recycling_rounded,
                         color: Colors.white,
-                        size: 26,
+                        size: 24,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -412,7 +395,7 @@ class _TotalPiecesCard extends StatelessWidget {
                             "Pieces Collected",
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: AppColors.textSecondary(context),
                             ),
                           ),
@@ -421,7 +404,7 @@ class _TotalPiecesCard extends StatelessWidget {
                             "All bins combined",
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: AppColors.textSecondary(
                                 context,
                               ).withOpacity(0.7),
@@ -445,7 +428,7 @@ class _TotalPiecesCard extends StatelessWidget {
                           "$value",
                           style: TextStyle(
                             fontSize: 48,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w800,
                             color: accent,
                             letterSpacing: -2,
                           ),
@@ -459,7 +442,7 @@ class _TotalPiecesCard extends StatelessWidget {
                         "pieces",
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textSecondary(context),
                         ),
                       ),
@@ -494,7 +477,6 @@ class _PiecesBreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<Map<String, int>>(
       stream: firestoreService.getAllBinsPieceCount(filter),
@@ -507,16 +489,8 @@ class _PiecesBreakdownCard extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface(context),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.black.withOpacity(0.08),
-                  blurRadius: isDark ? 24 : 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: AppShadows.elevation(context, 'large'),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,7 +503,7 @@ class _PiecesBreakdownCard extends StatelessWidget {
                       "Breakdown by Type",
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary(context),
                       ),
                     ),
@@ -563,7 +537,6 @@ class _BinFullEventsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<Map<String, int>>(
       stream: firestoreService.getFullCountsByTimeFilter(binId, filter),
@@ -576,16 +549,8 @@ class _BinFullEventsCard extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface(context),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.black.withOpacity(0.06),
-                  blurRadius: isDark ? 20 : 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: AppShadows.elevation(context, 'medium'),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,7 +563,7 @@ class _BinFullEventsCard extends StatelessWidget {
                       "Full Events",
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary(context),
                       ),
                     ),
@@ -609,7 +574,7 @@ class _BinFullEventsCard extends StatelessWidget {
                   "Times bins reached 100% capacity",
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textSecondary(context),
                   ),
                 ),
@@ -713,13 +678,7 @@ class _MiniStatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        boxShadow: AppShadows.elevation(context, 'medium'),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -730,7 +689,7 @@ class _MiniStatCard extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textPrimary(context),
             ),
           ),
@@ -739,7 +698,7 @@ class _MiniStatCard extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
           ),
@@ -789,32 +748,23 @@ class _EnvironmentalImpactCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? const Color(0xFF10B981).withOpacity(0.2)
-                      : Colors.black.withOpacity(0.06),
-                  blurRadius: isDark ? 24 : 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.border(context), width: 1.5),
+              boxShadow: AppShadows.elevation(context, 'large'),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(
-                          0xFF10B981,
-                        ).withOpacity(isDark ? 0.5 : 0.3),
-                        blurRadius: isDark ? 20 : 16,
-                        offset: const Offset(0, 6),
+                        color: const Color(0xFF10B981).withOpacity(isDark ? 0.3 : 0.18),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -833,7 +783,7 @@ class _EnvironmentalImpactCard extends StatelessWidget {
                         "Environmental Impact",
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textSecondary(context),
                         ),
                       ),
@@ -850,7 +800,7 @@ class _EnvironmentalImpactCard extends StatelessWidget {
                                 "~$value",
                                 style: const TextStyle(
                                   fontSize: 28,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w800,
                                   color: Color(0xFF10B981),
                                   letterSpacing: -1,
                                 ),
@@ -864,7 +814,7 @@ class _EnvironmentalImpactCard extends StatelessWidget {
                               "kg sorted",
                               style: TextStyle(
                                 fontSize: 14,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textSecondary(context),
                               ),
                             ),
@@ -934,16 +884,8 @@ class _TopPerformersCard extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface(context),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.black.withOpacity(0.08),
-                  blurRadius: isDark ? 24 : 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: AppShadows.elevation(context, 'large'),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -956,7 +898,7 @@ class _TopPerformersCard extends StatelessWidget {
                       "Top Collected",
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary(context),
                       ),
                     ),
@@ -967,7 +909,7 @@ class _TopPerformersCard extends StatelessWidget {
                   Text(
                     "No data yet",
                     style: TextStyle(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textSecondary(context),
                     ),
                   )
@@ -993,23 +935,14 @@ class _TopPerformersCard extends StatelessWidget {
                             height: 40,
                             decoration: BoxDecoration(
                               color: color,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: isDark
-                                  ? [
-                                      BoxShadow(
-                                        color: color.withOpacity(0.4),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      ),
-                                    ]
-                                  : null,
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Center(
                               child: Text(
                                 "${index + 1}",
                                 style: const TextStyle(
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w800,
                                   color: Colors.white,
                                 ),
                               ),
@@ -1023,7 +956,7 @@ class _TopPerformersCard extends StatelessWidget {
                               type.toUpperCase(),
                               style: TextStyle(
                                 fontSize: 15,
-                                fontWeight: FontWeight.w900,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary(context),
                               ),
                             ),
@@ -1032,7 +965,7 @@ class _TopPerformersCard extends StatelessWidget {
                             "$count pieces",
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w800,
                               color: color,
                             ),
                           ),

@@ -66,7 +66,7 @@ class BinsPage extends StatelessWidget {
                         "All Bins",
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary(context),
                         ),
                       ),
@@ -89,7 +89,7 @@ class BinsPage extends StatelessWidget {
                                 child: Text(
                                   "$count",
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w800,
                                     color: accent,
                                     fontSize: 13,
                                   ),
@@ -150,14 +150,22 @@ class BinsPage extends StatelessWidget {
                                     .where('resolved', isEqualTo: false)
                                     .snapshots(),
                                 builder: (context, alertSnap) {
-                                  final alertCount =
-                                      alertSnap.data?.docs.length ?? 0;
+                                  final docs = alertSnap.data?.docs ?? [];
+                                  final alertCount = docs.length;
+                                  final safetyAlertCount = docs.where((d) {
+                                    final t = (d.data() as Map<String,
+                                        dynamic>)['alertType'];
+                                    return t == 'BATTERY_DETECTED' ||
+                                        t == 'HARMFUL_GAS' ||
+                                        t == 'MOISTURE_DETECTED';
+                                  }).length;
 
                                   return _ModernBinCard(
                                     binId: bin.id,
                                     name: data['name'] ?? bin.id,
                                     location: data['location'] ?? 'Unknown',
                                     alertCount: alertCount,
+                                    safetyAlertCount: safetyAlertCount,
                                     accent: accent,
                                     accentSoft: accentSoft,
                                   );
@@ -195,8 +203,6 @@ class _HeroHeader extends StatelessWidget {
     return GlassContainer(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      blur: 20,
-      opacity: 0.1,
       borderRadius: BorderRadius.circular(24),
       child: Column(
         children: [
@@ -207,14 +213,7 @@ class _HeroHeader extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: accent,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accent.withOpacity(isDark ? 0.5 : 0.3),
-                      blurRadius: isDark ? 24 : 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 child: const Icon(
                   Icons.delete_outline_rounded,
@@ -231,7 +230,7 @@ class _HeroHeader extends StatelessWidget {
                       "Bins Management",
                       style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary(context),
                         letterSpacing: -0.5,
                       ),
@@ -241,7 +240,7 @@ class _HeroHeader extends StatelessWidget {
                       "Monitor & control all bins",
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textSecondary(context),
                       ),
                     ),
@@ -306,20 +305,22 @@ class _SystemHealthCard extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [accentSoft, AppColors.surface(context)],
+                colors: healthScore >= 80
+                    ? isDark
+                        ? [const Color(0xFF1A3A2A), AppColors.surface(context)]
+                        : [const Color(0xFFD1FAE5), AppColors.surface(context)]
+                    : healthScore >= 50
+                    ? isDark
+                        ? [const Color(0xFF3B2A00), AppColors.surface(context)]
+                        : [const Color(0xFFFEF3C7), AppColors.surface(context)]
+                    : isDark
+                    ? [const Color(0xFF3B0A0A), AppColors.surface(context)]
+                    : [const Color(0xFFFFE4E6), AppColors.surface(context)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? accent.withOpacity(0.2)
-                      : Colors.black.withOpacity(0.08),
-                  blurRadius: isDark ? 24 : 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              border: Border.all(color: AppColors.border(context), width: 1.5),
             ),
             child: Column(
               children: [
@@ -333,9 +334,9 @@ class _SystemHealthCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: healthColor.withOpacity(isDark ? 0.5 : 0.3),
-                            blurRadius: isDark ? 20 : 16,
-                            offset: const Offset(0, 6),
+                            color: healthColor.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
@@ -354,7 +355,7 @@ class _SystemHealthCard extends StatelessWidget {
                             "System Health",
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: AppColors.textSecondary(context),
                             ),
                           ),
@@ -365,7 +366,7 @@ class _SystemHealthCard extends StatelessWidget {
                                 "$healthScore%",
                                 style: TextStyle(
                                   fontSize: 28,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w800,
                                   color: healthColor,
                                   letterSpacing: -1,
                                 ),
@@ -379,7 +380,7 @@ class _SystemHealthCard extends StatelessWidget {
                                     : "Needs Attention",
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w800,
                                   color: AppColors.textSecondary(context),
                                 ),
                               ),
@@ -449,7 +450,7 @@ class _HealthMetric extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -466,7 +467,7 @@ class _HealthMetric extends StatelessWidget {
             "$value",
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: color,
             ),
           ),
@@ -475,7 +476,7 @@ class _HealthMetric extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
             maxLines: 1,
@@ -591,7 +592,7 @@ class _StatCard extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textPrimary(context),
             ),
           ),
@@ -600,7 +601,7 @@ class _StatCard extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
           ),
@@ -617,6 +618,7 @@ class _ModernBinCard extends StatefulWidget {
   final String name;
   final String location;
   final int alertCount;
+  final int safetyAlertCount;
   final Color accent;
   final Color accentSoft;
 
@@ -625,6 +627,7 @@ class _ModernBinCard extends StatefulWidget {
     required this.name,
     required this.location,
     required this.alertCount,
+    required this.safetyAlertCount,
     required this.accent,
     required this.accentSoft,
   });
@@ -734,44 +737,18 @@ class _ModernBinCardState extends State<_ModernBinCard>
                   gradient: LinearGradient(
                     colors: isDark
                         ? [
+                            statusColor.withOpacity(0.08),
                             AppColors.surface(context),
-                            widget.alertCount > 0
-                                ? Colors.redAccent.withOpacity(0.1)
-                                : status == 'online'
-                                ? widget.accentSoft.withOpacity(0.2)
-                                : const Color(0xFF2A2A2A),
                           ]
                         : [
-                            Colors.white,
-                            widget.alertCount > 0
-                                ? Colors.redAccent.withOpacity(0.05)
-                                : status == 'online'
-                                ? widget.accentSoft.withOpacity(0.3)
-                                : Colors.grey.shade50,
+                            statusColor.withOpacity(0.06),
+                            AppColors.surface(context),
                           ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: widget.alertCount > 0
-                        ? Colors.redAccent.withOpacity(isDark ? 0.4 : 0.2)
-                        : status == 'online' && isDark
-                        ? widget.accent.withOpacity(0.3)
-                        : Colors.transparent,
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDark
-                          ? (status == 'online'
-                                ? widget.accent.withOpacity(0.15)
-                                : Colors.black.withOpacity(0.3))
-                          : Colors.black.withOpacity(0.06),
-                      blurRadius: isDark ? 24 : 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  border: Border.all(color: AppColors.border(context), width: 1.5),
                 ),
                 child: Column(
                   children: [
@@ -786,11 +763,9 @@ class _ModernBinCardState extends State<_ModernBinCard>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: statusColor.withOpacity(
-                                  isDark ? 0.6 : 0.4,
-                                ),
-                                blurRadius: isDark ? 12 : 8,
-                                spreadRadius: isDark ? 2 : 1,
+                                color: statusColor.withOpacity(0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
@@ -805,7 +780,7 @@ class _ModernBinCardState extends State<_ModernBinCard>
                               Text(
                                 widget.name,
                                 style: TextStyle(
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w800,
                                   fontSize: 16,
                                   color: AppColors.textPrimary(context),
                                   letterSpacing: -0.3,
@@ -823,7 +798,7 @@ class _ModernBinCardState extends State<_ModernBinCard>
                                   Text(
                                     widget.location,
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w800,
                                       fontSize: 12,
                                       color: AppColors.textSecondary(context),
                                     ),
@@ -852,7 +827,7 @@ class _ModernBinCardState extends State<_ModernBinCard>
                               Text(
                                 statusLabel,
                                 style: TextStyle(
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w800,
                                   fontSize: 11,
                                   color: statusColor,
                                 ),
@@ -863,8 +838,42 @@ class _ModernBinCardState extends State<_ModernBinCard>
 
                         const SizedBox(width: 8),
 
-                        // Alert badge with glow
-                        if (widget.alertCount > 0)
+                        // Safety alert badge (distinct from regular alerts)
+                        if (widget.safetyAlertCount > 0) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade700,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.shield_rounded,
+                                  size: 11,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  "${widget.safetyAlertCount}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+
+                        // Regular alert badge with glow
+                        if (widget.alertCount > widget.safetyAlertCount)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 9,
@@ -873,15 +882,6 @@ class _ModernBinCardState extends State<_ModernBinCard>
                             decoration: BoxDecoration(
                               color: Colors.redAccent,
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.redAccent.withOpacity(
-                                    isDark ? 0.5 : 0.3,
-                                  ),
-                                  blurRadius: isDark ? 12 : 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -893,10 +893,10 @@ class _ModernBinCardState extends State<_ModernBinCard>
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  "${widget.alertCount}",
+                                  "${widget.alertCount - widget.safetyAlertCount}",
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w800,
                                     fontSize: 11,
                                   ),
                                 ),
@@ -958,6 +958,15 @@ class _ModernBinCardState extends State<_ModernBinCard>
               child: expanded
                   ? Column(
                       children: [
+                        // Safety alerts inline (if any)
+                        if (widget.safetyAlertCount > 0) ...[
+                          _SafetyAlertsInlineCard(
+                            binId: widget.binId,
+                            accent: widget.accent,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
                         // Live status card
                         LiveBinStatusCard(
                           binId: widget.binId,
@@ -1016,6 +1025,147 @@ class _ModernBinCardState extends State<_ModernBinCard>
   }
 }
 
+// SAFETY ALERTS INLINE CARD (shown at top of expanded bin)
+class _SafetyAlertsInlineCard extends StatelessWidget {
+  final String binId;
+  final Color accent;
+
+  const _SafetyAlertsInlineCard({
+    required this.binId,
+    required this.accent,
+  });
+
+  IconData _iconFor(String alertType) {
+    switch (alertType) {
+      case 'BATTERY_DETECTED':
+        return Icons.battery_alert_rounded;
+      case 'HARMFUL_GAS':
+        return Icons.air_rounded;
+      case 'MOISTURE_DETECTED':
+        return Icons.water_drop_rounded;
+      default:
+        return Icons.warning_rounded;
+    }
+  }
+
+  Color _colorFor(String alertType) {
+    switch (alertType) {
+      case 'BATTERY_DETECTED':
+        return const Color(0xFFDC2626);
+      case 'HARMFUL_GAS':
+        return const Color(0xFFD97706);
+      case 'MOISTURE_DETECTED':
+        return const Color(0xFF2563EB);
+      default:
+        return Colors.redAccent;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('bins')
+          .doc(binId)
+          .collection('alerts')
+          .where('isResolved', isEqualTo: false)
+          .snapshots(),
+      builder: (context, snap) {
+        final allDocs = snap.data?.docs ?? [];
+        // Filter safety alert types client-side to avoid composite index requirement
+        final docs = allDocs.where((d) {
+          final t = (d.data() as Map<String, dynamic>)['alertType'];
+          return t == 'BATTERY_DETECTED' ||
+              t == 'HARMFUL_GAS' ||
+              t == 'MOISTURE_DETECTED';
+        }).toList();
+        if (docs.isEmpty) return const SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.red.shade900.withOpacity(0.25)
+                : Colors.red.shade50,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.redAccent.withOpacity(isDark ? 0.4 : 0.25),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.shield_rounded,
+                      color: Colors.redAccent, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Safety Alerts',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      color: isDark
+                          ? Colors.red.shade300
+                          : Colors.red.shade700,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${docs.length}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ...docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final alertType = data['alertType'] as String? ?? '';
+                final message = data['message'] as String? ?? '';
+                final color = _colorFor(alertType);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(_iconFor(alertType), size: 16, color: color),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          message,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary(context),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 // BIN ALERTS CARD
 class _BinAlertsCard extends StatelessWidget {
   final String binId;
@@ -1042,20 +1192,20 @@ class _BinAlertsCard extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [accentSoft, AppColors.surface(context)],
+              colors: isDark
+                  ? [
+                      accent.withOpacity(0.08),
+                      AppColors.surface(context),
+                    ]
+                  : [
+                      accent.withOpacity(0.06),
+                      AppColors.surface(context),
+                    ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? accent.withOpacity(0.15)
-                    : Colors.black.withOpacity(0.06),
-                blurRadius: isDark ? 20 : 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            border: Border.all(color: AppColors.border(context), width: 1.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1067,7 +1217,7 @@ class _BinAlertsCard extends StatelessWidget {
                   Text(
                     "Alerts",
                     style: TextStyle(
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                       fontSize: 16,
                       color: AppColors.textPrimary(context),
                     ),
@@ -1085,7 +1235,7 @@ class _BinAlertsCard extends StatelessWidget {
                     child: Text(
                       "${alerts.length}",
                       style: TextStyle(
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: accent,
                         fontSize: 13,
                       ),
@@ -1102,7 +1252,7 @@ class _BinAlertsCard extends StatelessWidget {
                     Text(
                       "No active alerts",
                       style: TextStyle(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textSecondary(context),
                       ),
                     ),
@@ -1124,7 +1274,7 @@ class _BinAlertsCard extends StatelessWidget {
                           child: Text(
                             a.message,
                             style: TextStyle(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary(context),
                             ),
                           ),
@@ -1146,7 +1296,7 @@ class _BinAlertsCard extends StatelessWidget {
                     Text(
                       "Tap to view all alerts",
                       style: TextStyle(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         fontSize: 12,
                         color: AppColors.textSecondary(context),
                       ),
@@ -1200,7 +1350,7 @@ class _EmptyState extends StatelessWidget {
             "No Bins Found",
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textPrimary(context),
             ),
           ),
@@ -1209,7 +1359,7 @@ class _EmptyState extends StatelessWidget {
             "Add your first bin to start monitoring",
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
             textAlign: TextAlign.center,
@@ -1310,7 +1460,7 @@ void _showStatusMenu(
             "Change Bin Status",
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textPrimary(context),
             ),
           ),
@@ -1319,7 +1469,7 @@ void _showStatusMenu(
             binId,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
           ),
@@ -1407,7 +1557,7 @@ void _showConfirmationDialog(
             child: Text(
               "Confirm Status Change",
               style: TextStyle(
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 fontSize: 18,
                 color: AppColors.textPrimary(context),
               ),
@@ -1429,7 +1579,7 @@ void _showConfirmationDialog(
           child: Text(
             'Cancel',
             style: TextStyle(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
           ),
@@ -1442,7 +1592,7 @@ void _showConfirmationDialog(
           child: Text(
             'Confirm',
             style: TextStyle(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: statusInfo['color'],
             ),
           ),
@@ -1476,7 +1626,7 @@ Future<void> _updateBinStatus(
           const SizedBox(width: 12),
           const Text(
             "Updating status...",
-            style: TextStyle(fontWeight: FontWeight.w700),
+            style: TextStyle(fontWeight: FontWeight.w800),
           ),
         ],
       ),
@@ -1500,7 +1650,7 @@ Future<void> _updateBinStatus(
               Expanded(
                 child: Text(
                   "Status updated to ${_getStatusInfo(newStatus)['label']}",
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ],
@@ -1523,7 +1673,7 @@ Future<void> _updateBinStatus(
               const Expanded(
                 child: Text(
                   "Failed to update status",
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ],
@@ -1588,7 +1738,7 @@ class _StatusOption extends StatelessWidget {
           color: isSelected
               ? color.withOpacity(0.1)
               : AppColors.background(context),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected ? color : Colors.transparent,
             width: 2,
@@ -1614,7 +1764,7 @@ class _StatusOption extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary(context),
                     ),
                   ),

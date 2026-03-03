@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/app_colors.dart';
+import '../utils/shadows.dart';
 
 class LiveBinStatusCard extends StatelessWidget {
   final String binId;
@@ -54,22 +55,12 @@ class _LiveBinStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: isDark 
-                ? accent.withOpacity(0.15)
-                : Colors.black.withOpacity(0.08),
-            blurRadius: isDark ? 20 : 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        boxShadow: AppShadows.elevation(context, 'medium'),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,7 +72,7 @@ class _LiveBinStatusCard extends StatelessWidget {
                 "BIN STATUS",
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary(context),
                 ),
               ),
@@ -207,13 +198,7 @@ class _SubBinRow extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: barColor,
                             borderRadius: BorderRadius.circular(14),
-                            boxShadow: isDark ? [
-                              BoxShadow(
-                                color: barColor.withOpacity(0.5),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              ),
-                            ] : null,
+                            // No shadow for cleaner design
                           ),
                         );
                       },
@@ -258,13 +243,7 @@ class _LiveBadge extends StatelessWidget {
             decoration: BoxDecoration(
               color: accent,
               shape: BoxShape.circle,
-              boxShadow: isDark ? [
-                BoxShadow(
-                  color: accent.withOpacity(0.6),
-                  blurRadius: 6,
-                  spreadRadius: 1,
-                ),
-              ] : null,
+              // No shadow for cleaner design
             ),
           ),
           const SizedBox(width: 6),
@@ -272,7 +251,7 @@ class _LiveBadge extends StatelessWidget {
             "LIVE",
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: accent,
             ),
           ),
@@ -325,7 +304,7 @@ class _EmptyCard extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary(context),
                   ),
                 ),
@@ -333,7 +312,7 @@ class _EmptyCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textSecondary(context),
                   ),
                 ),

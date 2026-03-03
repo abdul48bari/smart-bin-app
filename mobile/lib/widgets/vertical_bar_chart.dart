@@ -163,8 +163,6 @@ class _VerticalBarState extends State<_VerticalBar>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
@@ -179,7 +177,7 @@ class _VerticalBarState extends State<_VerticalBar>
               value > 0 ? "$value" : "",
               style: TextStyle(
                 fontSize: 15,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 color: widget.color,
               ),
             );
@@ -198,25 +196,12 @@ class _VerticalBarState extends State<_VerticalBar>
                 width: double.infinity,
                 height: height < 15 ? 15 : height,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      widget.color,
-                      widget.color.withOpacity(0.6),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                  color: widget.color,  // Solid color for clean design
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(12),
                     bottom: Radius.circular(4),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.color.withOpacity(isDark ? 0.5 : 0.3),
-                      blurRadius: isDark ? 16 : 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  // No shadow - cleaner, more minimal look
                 ),
               );
             },
@@ -247,7 +232,7 @@ class _VerticalBarState extends State<_VerticalBar>
           widget.label.toUpperCase(),
           style: TextStyle(
             fontSize: 8,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             color: AppColors.textSecondary(context),
           ),
           textAlign: TextAlign.center,
@@ -382,7 +367,7 @@ class _CircularIndicatorState extends State<_CircularIndicator>
                 "$value",
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: widget.color,
                 ),
               );
@@ -396,7 +381,7 @@ class _CircularIndicatorState extends State<_CircularIndicator>
             widget.label.toUpperCase(),
             style: TextStyle(
               fontSize: 9,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
             textAlign: TextAlign.center,
@@ -409,7 +394,7 @@ class _CircularIndicatorState extends State<_CircularIndicator>
             "${(widget.percentage * 100).round()}%",
             style: TextStyle(
               fontSize: 10,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context).withOpacity(0.6),
             ),
           ),

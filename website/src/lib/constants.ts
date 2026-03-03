@@ -1,4 +1,4 @@
-import { Cpu, Cloud, Smartphone, Trash2, Camera, Brain, ArrowDownToLine, BarChart3, Mic, Bell, Shield } from 'lucide-react'
+import { Cpu, Cloud, Smartphone, Trash2, Camera, Brain, ArrowDownToLine, BarChart3, Mic, Bell, Shield, Blocks, Server, Wrench, Database } from 'lucide-react'
 
 export const NAV_LINKS = [
   { label: 'About', href: '#about' },
@@ -143,6 +143,7 @@ export const TEAM = [
     description: 'Designed and reviewed system architecture',
     initials: 'AM',
     color: '#6366f1',
+    icon: Blocks,
   },
   {
     name: 'Umar',
@@ -150,6 +151,7 @@ export const TEAM = [
     description: 'Developed mobile application UI and logic',
     initials: 'UM',
     color: '#14B8A6',
+    icon: Smartphone,
   },
   {
     name: 'Asim',
@@ -157,6 +159,7 @@ export const TEAM = [
     description: 'Implemented backend API and database structure',
     initials: 'AS',
     color: '#8B5CF6',
+    icon: Server,
   },
   {
     name: 'Ishita',
@@ -164,6 +167,7 @@ export const TEAM = [
     description: 'Built the physical smart bin and hardware assembly',
     initials: 'IS',
     color: '#F59E0B',
+    icon: Wrench,
   },
   {
     name: 'Nathan',
@@ -171,6 +175,7 @@ export const TEAM = [
     description: 'Programmed Raspberry Pi and controller systems',
     initials: 'NT',
     color: '#ef4444',
+    icon: Cpu,
   },
   {
     name: 'Arham',
@@ -178,6 +183,7 @@ export const TEAM = [
     description: 'Developed AI model for waste classification',
     initials: 'AR',
     color: '#ec4899',
+    icon: Brain,
   },
   {
     name: 'Danish',
@@ -185,6 +191,7 @@ export const TEAM = [
     description: 'Collected datasets and co-developed AI classification',
     initials: 'DN',
     color: '#10B981',
+    icon: Database,
   },
 ]
 

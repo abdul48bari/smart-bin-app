@@ -166,7 +166,7 @@ class _VoiceAssistantModalState extends State<VoiceAssistantModal>
             'Voice Assistant',
             style: TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textPrimary(context),
             ),
           ),
@@ -181,7 +181,7 @@ class _VoiceAssistantModalState extends State<VoiceAssistantModal>
                     : 'Tap to speak',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
           ),
@@ -371,7 +371,7 @@ class _VoiceAssistantModalState extends State<VoiceAssistantModal>
                   ...[
                     'What\'s the status of all bins?',
                     'Show me all fill levels',
-                    'Are there any active alerts?',
+                    'Are there any safety alerts?',
                     'How many items collected today?',
                   ].map((example) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),

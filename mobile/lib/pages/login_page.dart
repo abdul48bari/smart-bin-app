@@ -14,7 +14,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   late AnimationController _animationController;
@@ -93,22 +93,14 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = AppColors.accent(context);
     final accentSoft = AppColors.accentSoft(context);
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isDark
-                ? [
-                    const Color(0xFF1A1A1A),
-                    const Color(0xFF0A0A0A),
-                    const Color(0xFF000000),
-                  ]
-                : [
-                    accentSoft,
-                    Colors.white,
-                    Colors.white,
-                  ],
+                ? [const Color(0xFF1A1A1A), const Color(0xFF0A0A0A), const Color(0xFF000000)]
+                : [accentSoft, Colors.white, Colors.white],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -124,18 +116,18 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo/Icon with glow
+                      // Logo/Icon
                       Container(
-                        width: 100,
-                        height: 100,
+                        width: 88,
+                        height: 88,
                         decoration: BoxDecoration(
                           color: accent,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: accent.withOpacity(isDark ? 0.5 : 0.3),
-                              blurRadius: isDark ? 40 : 30,
-                              offset: const Offset(0, 15),
+                              color: accent.withOpacity(isDark ? 0.25 : 0.15),
+                              blurRadius: 18,
+                              spreadRadius: 2,
                             ),
                           ],
                         ),
@@ -153,7 +145,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                         "Smart Bin",
                         style: TextStyle(
                           fontSize: 36,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary(context),
                           letterSpacing: -1,
                         ),
@@ -175,17 +167,21 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                       // Login Card
                       Container(
                         constraints: const BoxConstraints(maxWidth: 400),
-                        padding: const EdgeInsets.all(32),
+                        padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
                           color: AppColors.surface(context),
                           borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.10)
+                                : Colors.black.withOpacity(0.08),
+                            width: 1.5,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: isDark
-                                  ? Colors.black.withOpacity(0.5)
-                                  : Colors.black.withOpacity(0.08),
-                              blurRadius: isDark ? 40 : 30,
-                              offset: const Offset(0, 15),
+                              color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
                             ),
                           ],
                         ),
@@ -313,16 +309,16 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
                               const SizedBox(height: 30),
 
-                              // Login Button with glow
+                              // Login Button
                               Container(
-                                height: 56,
+                                height: 52,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: accent.withOpacity(isDark ? 0.4 : 0.3),
-                                      blurRadius: isDark ? 20 : 16,
-                                      offset: const Offset(0, 8),
+                                      color: accent.withOpacity(isDark ? 0.3 : 0.2),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
@@ -350,7 +346,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                           'Sign In',
                                           style: TextStyle(
                                             fontSize: 16,
-                                            fontWeight: FontWeight.w900,
+                                            fontWeight: FontWeight.w800,
                                             letterSpacing: 0.5,
                                           ),
                                         ),

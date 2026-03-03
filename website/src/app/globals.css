@@ -141,14 +141,14 @@
   }
 }
 
-/* Custom cursor - hide default on desktop */
-@media (pointer: fine) {
-  * {
-    cursor: none !important;
-  }
+/* Custom cursor removed for accessibility */
+
+/* Custom scrollbar — minimal (webkit browsers) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(64, 64, 64, 0.5) transparent;
 }
 
-/* Custom scrollbar — minimal */
 ::-webkit-scrollbar {
   width: 4px;
 }
@@ -282,21 +282,3 @@ main {
   animation: orbit-spin 4s linear infinite;
 }
 
-/* Flip card preserve 3D */
-.flip-inner {
-  transform-style: preserve-3d;
-  transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
-}
-
-.flip-card:hover .flip-inner {
-  transform: rotateY(180deg);
-}
-
-.flip-face {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.flip-back {
-  transform: rotateY(180deg);
-}

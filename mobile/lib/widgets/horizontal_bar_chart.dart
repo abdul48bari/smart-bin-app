@@ -37,7 +37,7 @@ class HorizontalBarChart extends StatelessWidget {
           child: Text(
             "No data available for this period",
             style: TextStyle(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
           ),
@@ -161,7 +161,7 @@ class _BarRowState extends State<_BarRow>
                   widget.label.toUpperCase(),
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary(context),
                   ),
                 ),
@@ -175,7 +175,7 @@ class _BarRowState extends State<_BarRow>
                     "$value",
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                       color: widget.color,
                     ),
                   );
@@ -186,7 +186,7 @@ class _BarRowState extends State<_BarRow>
                 "(${(widget.percentage * 100).round()}%)",
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textSecondary(context),
                 ),
               ),
@@ -213,22 +213,9 @@ class _BarRowState extends State<_BarRow>
                     widthFactor: _animation.value,
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            widget.color,
-                            widget.color.withOpacity(0.7),
-                          ],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
+                        color: widget.color,  // Solid color for clean design
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: widget.color.withOpacity(isDark ? 0.5 : 0.3),
-                            blurRadius: isDark ? 12 : 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        // No shadow - cleaner, more minimal look
                       ),
                     ),
                   );

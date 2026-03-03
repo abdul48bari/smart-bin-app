@@ -34,8 +34,6 @@ class AccountPage extends StatelessWidget {
                 child: GlassContainer(
                   margin: const EdgeInsets.fromLTRB(16, 10, 16, 14),
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                  blur: 20,
-                  opacity: 0.1,
                   borderRadius: BorderRadius.circular(24),
                   child: Row(
                     children: [
@@ -44,12 +42,12 @@ class AccountPage extends StatelessWidget {
                         height: 48,
                         decoration: BoxDecoration(
                           color: accent,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: accent.withOpacity(isDark ? 0.5 : 0.3),
-                              blurRadius: isDark ? 24 : 20,
-                              offset: const Offset(0, 10),
+                              color: accent.withOpacity(isDark ? 0.3 : 0.18),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),
@@ -68,7 +66,7 @@ class AccountPage extends StatelessWidget {
                               "Account",
                               style: TextStyle(
                                 fontSize: 20,
-                                fontWeight: FontWeight.w900,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary(context),
                                 letterSpacing: -0.5,
                               ),
@@ -78,7 +76,7 @@ class AccountPage extends StatelessWidget {
                               "Settings & Security",
                               style: TextStyle(
                                 fontSize: 13,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textSecondary(context),
                               ),
                             ),
@@ -296,7 +294,7 @@ class _SectionHeader extends StatelessWidget {
           title,
           style: TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             color: AppColors.textPrimary(context),
           ),
         ),
@@ -323,23 +321,20 @@ class _ProfileCard extends StatelessWidget {
 
     return GlassContainer(
       padding: const EdgeInsets.all(20),
-      blur: 20,
-      opacity: isDark ? 0.2 : 0.6,
-      color: AppColors.surface(context),
       borderRadius: BorderRadius.circular(24),
       child: Row(
         children: [
           Container(
-            width: 70,
-            height: 70,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
               color: accent,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: accent.withOpacity(isDark ? 0.5 : 0.3),
-                  blurRadius: isDark ? 20 : 16,
-                  offset: const Offset(0, 8),
+                  color: accent.withOpacity(isDark ? 0.3 : 0.18),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
                 ),
               ],
             ),
@@ -358,7 +353,7 @@ class _ProfileCard extends StatelessWidget {
                   "Admin User",
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary(context),
                   ),
                 ),
@@ -392,7 +387,7 @@ class _ProfileCard extends StatelessWidget {
                     "Administrator",
                     style: TextStyle(
                       fontSize: 11,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                       color: accent,
                     ),
                   ),
@@ -418,9 +413,6 @@ class _BinManagementSection extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GlassContainer(
-      blur: 20,
-      opacity: isDark ? 0.2 : 0.6,
-      color: AppColors.surface(context),
       borderRadius: BorderRadius.circular(20),
       child: Column(
         children: [
@@ -463,9 +455,6 @@ class _SecuritySection extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GlassContainer(
-      blur: 20,
-      opacity: isDark ? 0.2 : 0.6,
-      color: AppColors.surface(context),
       borderRadius: BorderRadius.circular(20),
       child: Column(
         children: [
@@ -534,9 +523,6 @@ class _SettingsSection extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GlassContainer(
-      blur: 20,
-      opacity: isDark ? 0.2 : 0.6,
-      color: AppColors.surface(context),
       borderRadius: BorderRadius.circular(20),
       child: Column(
         children: [
@@ -676,7 +662,7 @@ class _SettingsItemState extends State<_SettingsItem> {
                       widget.title,
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary(context),
                       ),
                     ),
@@ -718,14 +704,14 @@ class _LogoutButton extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      height: 56,
+      height: 52,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.redAccent.withOpacity(isDark ? 0.5 : 0.3),
-            blurRadius: isDark ? 20 : 16,
-            offset: const Offset(0, 8),
+            color: Colors.redAccent.withOpacity(isDark ? 0.3 : 0.18),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -748,7 +734,7 @@ class _LogoutButton extends StatelessWidget {
               'Logout',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
               ),
             ),
@@ -768,7 +754,7 @@ void _showComingSoonDialog(BuildContext context, String feature) {
     context: context,
     builder: (context) => AlertDialog(
       backgroundColor: AppColors.surface(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           Container(
@@ -784,7 +770,7 @@ void _showComingSoonDialog(BuildContext context, String feature) {
           Text(
             "Coming Soon",
             style: TextStyle(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               fontSize: 18,
               color: AppColors.textPrimary(context),
             ),
@@ -804,7 +790,7 @@ void _showComingSoonDialog(BuildContext context, String feature) {
           onPressed: () => Navigator.pop(context),
           child: Text(
             'OK',
-            style: TextStyle(fontWeight: FontWeight.w900, color: accent),
+            style: TextStyle(fontWeight: FontWeight.w800, color: accent),
           ),
         ),
       ],
@@ -817,7 +803,7 @@ void _showLogoutDialog(BuildContext context) {
     context: context,
     builder: (context) => AlertDialog(
       backgroundColor: AppColors.surface(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           const Icon(Icons.logout_rounded, color: Colors.redAccent),
@@ -825,7 +811,7 @@ void _showLogoutDialog(BuildContext context) {
           Text(
             "Logout",
             style: TextStyle(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               fontSize: 18,
               color: AppColors.textPrimary(context),
             ),
@@ -846,7 +832,7 @@ void _showLogoutDialog(BuildContext context) {
           child: Text(
             'Cancel',
             style: TextStyle(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
           ),
@@ -859,7 +845,7 @@ void _showLogoutDialog(BuildContext context) {
           child: const Text(
             'Logout',
             style: TextStyle(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: Colors.redAccent,
             ),
           ),
@@ -874,7 +860,7 @@ void _showDeleteAccountDialog(BuildContext context) {
     context: context,
     builder: (context) => AlertDialog(
       backgroundColor: AppColors.surface(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           const Icon(Icons.warning_rounded, color: Colors.redAccent),
@@ -882,7 +868,7 @@ void _showDeleteAccountDialog(BuildContext context) {
           Text(
             "Delete Account",
             style: TextStyle(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               fontSize: 18,
               color: AppColors.textPrimary(context),
             ),
@@ -903,7 +889,7 @@ void _showDeleteAccountDialog(BuildContext context) {
           child: Text(
             'OK',
             style: TextStyle(
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: AppColors.textSecondary(context),
             ),
           ),
