@@ -581,12 +581,14 @@ class _HelpBox extends StatelessWidget {
   });
 
   static const _examples = [
+    "Fill level of plastic in bin 2",
     "What's the fill level of all bins?",
     "Which bin is most full?",
+    "Which bins need emptying?",
     "Are there any safety alerts?",
     "How many items collected this week?",
     "What's the system health?",
-    "Status of bin 2",
+    "Help",
   ];
 
   @override

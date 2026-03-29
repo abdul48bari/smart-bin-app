@@ -34,6 +34,16 @@ class VoiceAssistantService {
     {'id': 'GYM_FL_07',   'name': 'Gym',           'fill': 21},
   ];
 
+  static const Map<String, Map<String, int>> _demoSubBins = {
+    'DIN_HALL_01': {'plastic': 45, 'paper': 30, 'organic': 80, 'cans': 60, 'mixed': 70},
+    'LIB_L1_02':   {'plastic': 50, 'paper': 65, 'organic': 20, 'cans': 35, 'mixed': 40},
+    'DORM_A_03':   {'plastic': 85, 'paper': 70, 'organic': 60, 'cans': 90, 'mixed': 75},
+    'PARK_N_04':   {'plastic': 20, 'paper': 15, 'organic': 40, 'cans': 45, 'mixed': 30},
+    'LAB_SCI_05':  {'plastic': 90, 'paper': 85, 'organic': 95, 'cans': 80, 'mixed': 88},
+    'CAFE_B_06':   {'plastic': 60, 'paper': 45, 'organic': 70, 'cans': 55, 'mixed': 40},
+    'GYM_FL_07':   {'plastic': 15, 'paper': 10, 'organic': 25, 'cans': 30, 'mixed': 20},
+  };
+
   // ---------------------------------------------------------------------------
   // Initialization
   // ---------------------------------------------------------------------------
@@ -223,14 +233,31 @@ class VoiceAssistantService {
     final cmd = normalized.toLowerCase().trim();
 
     try {
-      // Detect which bins the user is asking about
+      // Detect which bins and sub-bins the user is asking about
       final binTarget = _resolveBinTarget(cmd);
+      final subBin = _resolveSubBin(cmd);
 
-      // Intent detection in priority order
+      // Help
+      if (_hasIntent(cmd, ['help', 'what can you do', 'commands', 'capabilities'])) {
+        return _getHelp();
+      }
+
+      // Most full bin
       if (_hasIntent(cmd, ['most full', 'fullest', 'which bin is full', 'which bin full'])) {
         return await _getMostFullBin(binTarget);
       }
 
+      // Bins needing emptying
+      if (_hasIntent(cmd, ['empty', 'urgent', 'need attention', 'needs emptying', 'need emptying', 'need collection', 'collect'])) {
+        return await _getBinsNeedingEmptying();
+      }
+
+      // Sub-bin fill level (e.g. "fill level of plastic in bin 2")
+      if (subBin != null && _fillIntent(cmd)) {
+        return await _getSubBinLevel(cmd, binTarget, subBin);
+      }
+
+      // General fill levels
       if (_fillIntent(cmd) && binTarget == 'all') {
         return await _getAllFillLevels();
       }
@@ -239,32 +266,35 @@ class VoiceAssistantService {
         return await _getFillLevelForTarget(cmd, binTarget);
       }
 
+      // System health
       if (_hasIntent(cmd, ['health', 'system health', 'overall health', 'health score'])) {
         return await _getSystemHealth();
       }
 
+      // Status
       if (_statusIntent(cmd)) {
         return await _getSystemStatus();
       }
 
+      // Safety alerts
       if (_safetyIntent(cmd)) {
         return await _getSafetyAlerts(_detectSafetyType(cmd));
       }
 
+      // General alerts
       if (_alertIntent(cmd)) {
         return await _getActiveAlerts();
       }
 
+      // Analytics
       if (_analyticsIntent(cmd)) {
         return await _getAnalytics(cmd);
       }
 
-      return "I didn't understand that. Try asking: "
-          "\"What's the fill level of all bins?\", "
-          "\"Which bin is most full?\", "
-          "\"Are there any safety alerts?\", "
-          "\"How many items collected this week?\", or "
-          "\"What's the system health?\"";
+      return "I didn't understand that. Say 'help' to hear what I can do, or try: "
+          "\"fill level of plastic in bin 2\", "
+          "\"which bins need emptying?\", "
+          "\"any safety alerts?\".";
     } catch (e) {
       return "Sorry, I encountered an error processing your request.";
     }
@@ -384,6 +414,15 @@ class VoiceAssistantService {
     return 'all';
   }
 
+  /// Returns a sub-bin name (plastic/paper/organic/cans/mixed) or null
+  String? _resolveSubBin(String cmd) {
+    const subBins = ['plastic', 'paper', 'organic', 'cans', 'mixed'];
+    for (final sub in subBins) {
+      if (cmd.contains(sub)) return sub;
+    }
+    return null;
+  }
+
   // ---------------------------------------------------------------------------
   // Bin fetching
   // ---------------------------------------------------------------------------
@@ -435,6 +474,21 @@ class VoiceAssistantService {
     final binDoc = await FirebaseFirestore.instance.collection('bins').doc(binId).get();
     final fillLevel = binDoc.data()?['fillLevel'];
     return fillLevel != null ? (fillLevel as num).toInt() : 0;
+  }
+
+  Future<int?> _fetchSubBinFillLevel(String binId, String subBin) async {
+    if (FirestoreService.isDemoMode) {
+      return _demoSubBins[binId]?[subBin];
+    }
+    final doc = await FirebaseFirestore.instance
+        .collection('bins')
+        .doc(binId)
+        .collection('subBins')
+        .doc(subBin)
+        .get();
+    if (!doc.exists) return null;
+    final val = doc.data()?['currentFillPercent'];
+    return val != null ? (val as num).toInt() : null;
   }
 
   // ---------------------------------------------------------------------------
@@ -547,6 +601,80 @@ class VoiceAssistantService {
 
     if (results.isEmpty) return "No fill level data available.";
     return "Current fill levels — ${results.join(', ')}.";
+  }
+
+  Future<String> _getSubBinLevel(String cmd, String binTarget, String subBin) async {
+    final bins = await _fetchBins();
+    if (bins.isEmpty) return "No bins are configured.";
+
+    // Single specific bin
+    if (binTarget != 'all' && !RegExp(r'^\d+$').hasMatch(binTarget)) {
+      // Direct bin ID
+      final fill = await _fetchSubBinFillLevel(binTarget, subBin);
+      final bin = bins.firstWhere((b) => b['id'] == binTarget, orElse: () => {});
+      if (bin.isEmpty) return "Bin not found.";
+      final name = (bin['name'] as String?) ?? binTarget;
+      if (fill == null) return "No data for the $subBin sub-bin in $name.";
+      return "The $subBin bin in $name is at $fill%.";
+    }
+
+    // Position-based
+    if (RegExp(r'^\d+$').hasMatch(binTarget)) {
+      final idx = int.parse(binTarget) - 1;
+      if (idx < 0 || idx >= bins.length) return "I couldn't find bin number ${int.parse(binTarget)}.";
+      final bin = bins[idx];
+      final binId = bin['id'] as String;
+      final name = (bin['name'] as String?) ?? binId;
+      final fill = await _fetchSubBinFillLevel(binId, subBin);
+      if (fill == null) return "No data for the $subBin sub-bin in $name.";
+      return "The $subBin bin in $name is at $fill%.";
+    }
+
+    // All bins — report that sub-bin across all
+    final results = <String>[];
+    for (final bin in bins) {
+      final binId = bin['id'] as String;
+      final name = (bin['name'] as String?) ?? binId;
+      final fill = await _fetchSubBinFillLevel(binId, subBin);
+      if (fill != null) results.add("$name: $fill%");
+    }
+    if (results.isEmpty) return "No $subBin sub-bin data available.";
+    return "$subBin fill levels — ${results.join(', ')}.";
+  }
+
+  Future<String> _getBinsNeedingEmptying({int threshold = 80}) async {
+    final bins = await _fetchBins();
+    if (bins.isEmpty) return "No bins are configured.";
+
+    if (FirestoreService.isDemoMode) {
+      final urgent = <String>[];
+      for (final bin in _demoBins) {
+        final fill = bin['fill'] as int;
+        if (fill >= threshold) {
+          urgent.add("${bin['name']} (${fill}%)");
+        }
+      }
+      if (urgent.isEmpty) return "No bins are near full. All under $threshold%.";
+      return "${urgent.length} bin${urgent.length == 1 ? '' : 's'} need${urgent.length == 1 ? 's' : ''} attention: ${urgent.join(', ')}.";
+    }
+
+    final urgent = <String>[];
+    for (final bin in bins) {
+      final fill = await _fetchBinFillLevel(bin['id'] as String);
+      if (fill >= threshold) {
+        final name = (bin['name'] as String?) ?? bin['id'] as String;
+        urgent.add("$name (${fill}%)");
+      }
+    }
+    if (urgent.isEmpty) return "No bins are near full. All under $threshold%.";
+    return "${urgent.length} bin${urgent.length == 1 ? '' : 's'} need${urgent.length == 1 ? 's' : ''} attention: ${urgent.join(', ')}.";
+  }
+
+  String _getHelp() {
+    return "I can help with: fill levels (all bins or specific), sub-bin levels like plastic or organic, "
+        "which bins need emptying, system status and health, safety alerts (battery, gas, moisture), "
+        "active alerts, and collection statistics by day, week, or month. "
+        "Try: 'fill level of plastic in bin 2', 'which bins need emptying', or 'how many items this week'.";
   }
 
   Future<String> _getMostFullBin(String binTarget) async {
@@ -770,6 +898,10 @@ class VoiceAssistantService {
       // online / offline spacing
       r'\bon line\b': 'online',
       r'\boff line\b': 'offline',
+
+      // mixed
+      r'\bmix\b': 'mixed',
+      r'\bmixes\b': 'mixed',
     };
 
     corrections.forEach((pattern, replacement) {
