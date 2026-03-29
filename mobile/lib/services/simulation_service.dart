@@ -8,6 +8,7 @@ class SimulationService {
   Timer? _timer;
   Timer? _safetyAlertTimer;
   final _controller = StreamController<QuerySnapshot>.broadcast();
+  QuerySnapshot? _lastEmitted; // cached for instant replay to late subscribers
 
   // Simulated Bin Data
   final List<Map<String, dynamic>> _dummyBins = [
@@ -16,35 +17,49 @@ class SimulationService {
       'name': 'Dining Hall Main',
       'location': 'Cafeteria',
       'status': 'online',
-      'fillLevel': 45,
+      'fillLevel': 62,
     },
     {
       'id': 'LIB_L1_02',
       'name': 'Library L1',
       'location': 'Study Area',
       'status': 'online',
-      'fillLevel': 78,
+      'fillLevel': 45,
     },
     {
       'id': 'DORM_A_03',
       'name': 'Dorm Block A',
       'location': 'Entrance',
-      'status': 'maintenance',
-      'fillLevel': 12,
+      'status': 'online',
+      'fillLevel': 78,
     },
     {
       'id': 'PARK_N_04',
       'name': 'North Park',
       'location': 'Outdoor',
-      'status': 'offline',
-      'fillLevel': 0,
+      'status': 'online',
+      'fillLevel': 33,
     },
     {
       'id': 'LAB_SCI_05',
       'name': 'Science Lab',
       'location': 'Corridor',
       'status': 'online',
-      'fillLevel': 92,
+      'fillLevel': 88,
+    },
+    {
+      'id': 'CAFE_B_06',
+      'name': 'Cafeteria Block B',
+      'location': 'Food Court',
+      'status': 'online',
+      'fillLevel': 54,
+    },
+    {
+      'id': 'GYM_FL_07',
+      'name': 'Gym Floor',
+      'location': 'Sports Wing',
+      'status': 'online',
+      'fillLevel': 21,
     },
   ];
 
@@ -201,10 +216,28 @@ class SimulationService {
       return _SimulatedDocumentSnapshot(data['id'], data);
     }).toList();
 
-    _controller.add(_SimulatedQuerySnapshot(docs));
+    final snapshot = _SimulatedQuerySnapshot(docs);
+    _lastEmitted = snapshot;
+    _controller.add(snapshot);
   }
 
-  Stream<QuerySnapshot> get binsStream => _controller.stream;
+  // Replays last snapshot immediately to new subscribers, then streams updates
+  Stream<QuerySnapshot> get binsStream async* {
+    if (_lastEmitted != null) yield _lastEmitted!;
+    yield* _controller.stream;
+  }
+
+  Stream<String> getBinStatusStream(String binId) {
+    return binsStream.map((snapshot) {
+      for (final doc in snapshot.docs) {
+        if (doc.id == binId) {
+          final data = doc.data() as Map<String, dynamic>;
+          return (data['status'] as String?) ?? 'offline';
+        }
+      }
+      return 'offline';
+    });
+  }
 }
 
 // Mock Classes to satisfy Firestore Stream types

@@ -194,8 +194,9 @@ class _SafetyAlertsBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppStateProvider>(context);
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('bins').snapshots(),
+      stream: appState.binsStream,
       builder: (context, binsSnapshot) {
         if (!binsSnapshot.hasData) return const SizedBox.shrink();
 
@@ -223,27 +224,32 @@ class _SafetyAlertCountAggregator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use a StreamBuilder per bin and aggregate in FutureBuilder
+    final appState = Provider.of<AppStateProvider>(context);
+
+    // In demo mode emit 0 immediately — no Firestore queries
+    final stream = appState.isDemoMode
+        ? Stream.value(0)
+        : Stream.periodic(const Duration(seconds: 5)).asyncMap((_) async {
+            int total = 0;
+            for (final binId in binIds) {
+              final snap = await FirebaseFirestore.instance
+                  .collection('bins')
+                  .doc(binId)
+                  .collection('alerts')
+                  .where('isResolved', isEqualTo: false)
+                  .get();
+              total += snap.docs.where((d) {
+                final t = (d.data() as Map<String, dynamic>)['alertType'];
+                return t == 'BATTERY_DETECTED' ||
+                    t == 'HARMFUL_GAS' ||
+                    t == 'MOISTURE_DETECTED';
+              }).length;
+            }
+            return total;
+          });
+
     return StreamBuilder<int>(
-      // Poll every 5 seconds; filter safety types client-side to avoid index requirements
-      stream: Stream.periodic(const Duration(seconds: 5)).asyncMap((_) async {
-        int total = 0;
-        for (final binId in binIds) {
-          final snap = await FirebaseFirestore.instance
-              .collection('bins')
-              .doc(binId)
-              .collection('alerts')
-              .where('isResolved', isEqualTo: false)
-              .get();
-          total += snap.docs.where((d) {
-            final t = (d.data() as Map<String, dynamic>)['alertType'];
-            return t == 'BATTERY_DETECTED' ||
-                t == 'HARMFUL_GAS' ||
-                t == 'MOISTURE_DETECTED';
-          }).length;
-        }
-        return total;
-      }),
+      stream: stream,
       builder: (context, snapshot) {
         final count = snapshot.data ?? 0;
         if (count == 0) return const SizedBox.shrink();
@@ -341,8 +347,9 @@ class _SafetyAlertsScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.textPrimary(context)),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('bins').snapshots(),
+      body: Consumer<AppStateProvider>(
+        builder: (context, appState, _) => StreamBuilder<QuerySnapshot>(
+        stream: appState.binsStream,
         builder: (context, binsSnap) {
           if (!binsSnap.hasData) {
             return Center(
@@ -377,6 +384,7 @@ class _SafetyAlertsScreen extends StatelessWidget {
             },
           );
         },
+      ),
       ),
     );
   }
@@ -865,7 +873,10 @@ class _OverviewCards extends StatelessWidget {
         final bins = binsSnapshot.data!.docs;
 
         return StreamBuilder<int>(
-          stream: Stream.periodic(const Duration(seconds: 2), (count) => count),
+          stream: (() async* {
+            yield 0;
+            yield* Stream.periodic(const Duration(seconds: 2), (i) => i + 1);
+          })(),
           builder: (context, _) {
             return FutureBuilder<Map<String, int>>(
               future: _calculateStats(bins),
@@ -1011,8 +1022,9 @@ class _BinsSystemOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppStateProvider>(context);
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('bins').snapshots(),
+      stream: appState.binsStream,
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
 
@@ -1438,8 +1450,9 @@ class _AllBinsAlertsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppStateProvider>(context);
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('bins').snapshots(),
+      stream: appState.binsStream,
       builder: (context, binsSnapshot) {
         if (!binsSnapshot.hasData) {
           return const SizedBox.shrink();

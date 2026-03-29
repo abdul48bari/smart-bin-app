@@ -7,6 +7,23 @@ import 'dart:async';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  // Demo mode flag — set by AppStateProvider when demo mode is toggled
+  static bool isDemoMode = false;
+
+  // Demo piece count data per time filter
+  static const Map<String, Map<String, int>> _demoPieceCounts = {
+    'day':   {'plastic': 23, 'paper': 18, 'organic': 34, 'cans': 12, 'mixed': 9},
+    'week':  {'plastic': 145, 'paper': 112, 'organic': 203, 'cans': 78, 'mixed': 56},
+    'month': {'plastic': 589, 'paper': 443, 'organic': 821, 'cans': 312, 'mixed': 198},
+  };
+
+  // Demo full-count data per time filter (for analytics charts)
+  static const Map<String, Map<String, int>> _demoFullCounts = {
+    'day':   {'plastic': 3, 'paper': 2, 'organic': 5, 'cans': 1, 'mixed': 2},
+    'week':  {'plastic': 18, 'paper': 14, 'organic': 27, 'cans': 9, 'mixed': 11},
+    'month': {'plastic': 72, 'paper': 55, 'organic': 103, 'cans': 38, 'mixed': 44},
+  };
+
   // ================= SUB BINS =================
 
   Stream<List<BinSub>> getSubBins(String binId) {
@@ -149,6 +166,14 @@ class FirestoreService {
     String binId,
     TimeFilter filter,
   ) {
+    if (isDemoMode) {
+      final key = filter == TimeFilter.day ? 'day' : filter == TimeFilter.week ? 'week' : 'month';
+      return (() async* {
+        yield Map<String, int>.from(_demoFullCounts[key]!);
+        yield* Stream.periodic(const Duration(seconds: 5), (_) => Map<String, int>.from(_demoFullCounts[key]!));
+      })();
+    }
+
     const List<String> allSubBins = [
       'plastic',
       'paper',
@@ -278,6 +303,14 @@ TimeFilter? _currentFilter;
 Timer? _refreshTimer;
 
 Stream<Map<String, int>> getAllBinsPieceCount(TimeFilter filter) {
+  if (isDemoMode) {
+    final key = filter == TimeFilter.day ? 'day' : filter == TimeFilter.week ? 'week' : 'month';
+    return (() async* {
+      yield Map<String, int>.from(_demoPieceCounts[key]!);
+      yield* Stream.periodic(const Duration(seconds: 5), (_) => Map<String, int>.from(_demoPieceCounts[key]!));
+    })();
+  }
+
   const List<String> allSubBins = ['plastic', 'paper', 'organic', 'cans', 'mixed'];
 
   if (_currentFilter != filter || _pieceCountController == null) {
@@ -297,6 +330,9 @@ Stream<Map<String, int>> getAllBinsPieceCount(TimeFilter filter) {
 }
 
 Future<void> _fetchPieceData(TimeFilter filter, List<String> allSubBins) async {
+  // Bail out if demo mode is active — avoids Firestore calls with no auth
+  if (isDemoMode) return;
+
   final Map<String, int> totalCounts = {
     for (var subBin in allSubBins) subBin: 0,
   };

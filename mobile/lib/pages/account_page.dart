@@ -540,7 +540,12 @@ class _SettingsSection extends StatelessWidget {
                   value: appState.isDemoMode,
                   onChanged: (val) {
                     HapticFeedback.lightImpact();
-                    appState.toggleDemoMode(val);
+                    // If entered via "Try Demo", turning off demo = logout back to login
+                    if (!val && appState.isDemoEntry) {
+                      appState.exitDemoMode();
+                    } else {
+                      appState.toggleDemoMode(val);
+                    }
                   },
                   activeColor: Colors.purpleAccent,
                 ),
@@ -840,7 +845,12 @@ void _showLogoutDialog(BuildContext context) {
         TextButton(
           onPressed: () async {
             Navigator.pop(context);
-            await AuthService().signOut();
+            final appState = Provider.of<AppStateProvider>(context, listen: false);
+            if (appState.isDemoEntry) {
+              appState.exitDemoMode();
+            } else {
+              await AuthService().signOut();
+            }
           },
           child: const Text(
             'Logout',

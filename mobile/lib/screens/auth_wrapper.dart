@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../pages/login_page.dart';
+import '../providers/app_state_provider.dart';
 import 'main_app_screen.dart';
 
 class AuthWrapper extends StatelessWidget {
@@ -8,6 +10,13 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppStateProvider>(context);
+
+    // Demo entry bypasses Firebase auth entirely
+    if (appState.isDemoEntry) {
+      return const MainAppScreen();
+    }
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {

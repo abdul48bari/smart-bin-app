@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../providers/app_state_provider.dart';
 import '../utils/app_colors.dart';
 
 class LoginPage extends StatefulWidget {
@@ -353,6 +355,66 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Divider
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(
+                              color: AppColors.textSecondary(context).withOpacity(0.2),
+                              thickness: 1,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              "or",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary(context).withOpacity(0.5),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              color: AppColors.textSecondary(context).withOpacity(0.2),
+                              thickness: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Try Demo Mode Button
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 400),
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Provider.of<AppStateProvider>(context, listen: false)
+                                .enterDemoMode();
+                          },
+                          icon: Icon(Icons.play_circle_outline_rounded, color: accent),
+                          label: Text(
+                            "Try Demo Mode",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: accent,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 52),
+                            side: BorderSide(color: accent.withOpacity(0.5), width: 1.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
                         ),
                       ),

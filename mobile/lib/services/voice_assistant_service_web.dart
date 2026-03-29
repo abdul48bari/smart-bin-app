@@ -11,6 +11,7 @@ class VoiceAssistantService {
   bool _isListening = false;
   String _lastRecognizedText = '';
   String _lastResponse = '';
+  DateTime? _listenStartTime;
 
   html.SpeechRecognition? _recognition;
   html.SpeechSynthesis? _synthesis;
@@ -19,43 +20,47 @@ class VoiceAssistantService {
   String get lastRecognizedText => _lastRecognizedText;
   String get lastResponse => _lastResponse;
 
-  // Initialize speech services for web
+  // ---------------------------------------------------------------------------
+  // Demo data
+  // ---------------------------------------------------------------------------
+
+  static const List<Map<String, dynamic>> _demoBins = [
+    {'id': 'DIN_HALL_01', 'name': 'Dining Hall',  'fill': 62},
+    {'id': 'LIB_L1_02',   'name': 'Library',       'fill': 45},
+    {'id': 'DORM_A_03',   'name': 'Dorm Block A',  'fill': 78},
+    {'id': 'PARK_N_04',   'name': 'North Park',    'fill': 33},
+    {'id': 'LAB_SCI_05',  'name': 'Science Lab',   'fill': 88},
+    {'id': 'CAFE_B_06',   'name': 'Cafeteria B',   'fill': 54},
+    {'id': 'GYM_FL_07',   'name': 'Gym',           'fill': 21},
+  ];
+
+  // ---------------------------------------------------------------------------
+  // Initialization
+  // ---------------------------------------------------------------------------
+
   Future<Map<String, dynamic>> initialize() async {
     try {
-      // Check if browser supports Web Speech API
       if (!_isSpeechRecognitionSupported()) {
         return {
           'success': false,
-          'message': 'Speech recognition is not supported in this browser. Please use Chrome or Edge.',
+          'message':
+              'Speech recognition is not supported in this browser. Please use Chrome or Edge.',
           'openSettings': false,
         };
       }
 
-      print('🌐 Initializing Web Speech API...');
-
-      // Create speech recognition instance
-      _recognition = html.SpeechRecognition();
-      _recognition!.continuous = false;
-      _recognition!.interimResults = true;
-      _recognition!.lang = 'en-US';
-
-      // Get speech synthesis
       _synthesis = html.window.speechSynthesis;
-
-      print('✅ Web Speech API initialized');
-
       return {'success': true, 'message': 'Voice assistant ready'};
     } catch (e) {
-      print('❌ Error initializing web speech: $e');
       return {
         'success': false,
-        'message': 'Failed to initialize speech recognition. Please use Chrome or Edge browser.',
+        'message':
+            'Failed to initialize speech recognition. Please use Chrome or Edge browser.',
         'openSettings': false,
       };
     }
   }
 
-  // Check if speech recognition is supported
   bool _isSpeechRecognitionSupported() {
     try {
       return js.context.hasProperty('SpeechRecognition') ||
@@ -65,651 +70,718 @@ class VoiceAssistantService {
     }
   }
 
-  // Start listening
-  Future<void> startListening(Function(String, bool) onResult) async {
-    if (_recognition == null) {
-      final result = await initialize();
-      if (!result['success']) return;
-    }
+  // ---------------------------------------------------------------------------
+  // Listening
+  // ---------------------------------------------------------------------------
 
+  Future<void> startListening(Function(String, bool) onResult) async {
     if (_isListening) return;
+
+    if (!_isSpeechRecognitionSupported()) {
+      onResult('__NOT_SUPPORTED__', true);
+      return;
+    }
 
     _isListening = true;
     _lastRecognizedText = '';
+    _listenStartTime = DateTime.now();
+
+    // Create a fresh instance every time for clean state
+    _recognition = html.SpeechRecognition();
+    _recognition!.continuous = false;
+    _recognition!.interimResults = true;
+    _recognition!.lang = 'en-US';
+    _recognition!.maxAlternatives = 3;
+
+    String partialText = '';
+
+    _recognition!.onResult.listen((html.SpeechRecognitionEvent event) {
+      final results = event.results;
+      if (results == null || results.isEmpty) return;
+
+      final result = results.last;
+
+      // Pick best transcript by iterating all alternatives
+      String bestTranscript = '';
+      for (int i = 0; i < _recognition!.maxAlternatives!; i++) {
+        final alt = result.item(i);
+        if (alt != null && (alt.transcript ?? '').isNotEmpty) {
+          bestTranscript = alt.transcript!;
+          break;
+        }
+      }
+
+      if (bestTranscript.isEmpty) return;
+
+      final isFinal = result.isFinal == true;
+      partialText = bestTranscript;
+      _lastRecognizedText = bestTranscript;
+
+      onResult(bestTranscript, isFinal);
+
+      if (isFinal && bestTranscript.isNotEmpty) {
+        _recognition!.stop();
+        _isListening = false;
+      }
+    });
+
+    _recognition!.onError.listen((html.Event event) {
+      _isListening = false;
+
+      // Use dynamic cast to extract the .error string
+      String errorType = '';
+      try {
+        final dynamic dynEvent = event;
+        errorType = (dynEvent.error as String?) ?? '';
+      } catch (_) {}
+
+      if (errorType == 'not-allowed') {
+        onResult('__MIC_BLOCKED__', true);
+      } else if (errorType == 'no-speech') {
+        onResult('__NO_SPEECH__', true);
+      } else {
+        // For other errors, surface partial text if we have it
+        if (partialText.isNotEmpty) {
+          onResult(partialText, true);
+        } else {
+          onResult('__NO_SPEECH__', true);
+        }
+      }
+    });
+
+    _recognition!.onEnd.listen((html.Event event) {
+      if (!_isListening) return; // already handled via onResult or onError
+
+      _isListening = false;
+
+      final elapsed = _listenStartTime != null
+          ? DateTime.now().difference(_listenStartTime!).inMilliseconds
+          : 9999;
+
+      if (elapsed < 800 && partialText.isEmpty) {
+        // Ended almost immediately with no audio — likely mic blocked
+        onResult('__MIC_BLOCKED__', true);
+      } else if (partialText.isNotEmpty) {
+        onResult(partialText, true);
+      } else {
+        onResult('__NO_SPEECH__', true);
+      }
+    });
 
     try {
-      // Create a new recognition instance for each session to avoid stale listeners
-      _recognition = html.SpeechRecognition();
-      _recognition!.continuous = true; // Keep listening instead of auto-stopping
-      _recognition!.interimResults = true;
-      _recognition!.lang = 'en-US';
-      _recognition!.maxAlternatives = 1;
-
-      // Set up event listeners
-      _recognition!.onResult.listen((html.SpeechRecognitionEvent event) {
-        final results = event.results;
-        if (results != null && results.isNotEmpty) {
-          final result = results.last;
-          final alternative = result.item(0);
-          if (alternative != null) {
-            _lastRecognizedText = alternative.transcript ?? '';
-            final isFinal = result.isFinal == true;
-
-            print('🎯 Recognized (${isFinal ? 'final' : 'interim'}): $_lastRecognizedText');
-
-            // Call callback for both interim and final results
-            // UI will show live captions for interim, and process only when final
-            onResult(_lastRecognizedText, isFinal);
-
-            // When we get a final result, stop listening
-            if (isFinal && _lastRecognizedText.isNotEmpty) {
-              print('✅ Final result received, stopping...');
-              _recognition!.stop();
-              _isListening = false;
-            }
-          }
-        }
-      });
-
-      _recognition!.onError.listen((html.Event event) {
-        print('❌ Speech recognition error: $event');
-        _isListening = false;
-        // Notify modal to stop listening
-        if (_lastRecognizedText.isNotEmpty) {
-          onResult(_lastRecognizedText, true);
-        } else {
-          onResult('Error occurred', true);
-        }
-      });
-
-      _recognition!.onEnd.listen((html.Event event) {
-        print('🛑 Recognition ended');
-        if (_isListening) {
-          _isListening = false;
-          // If recognition ended but we have text, process it
-          if (_lastRecognizedText.isNotEmpty) {
-            print('📝 Processing text from ended recognition: $_lastRecognizedText');
-            onResult(_lastRecognizedText, true);
-          } else {
-            // Recognition ended with no text, notify modal
-            print('⚠️ Recognition ended with no text');
-            onResult('', true);
-          }
-        }
-      });
-
-      // Start recognition
       _recognition!.start();
-      print('🎤 Started listening...');
     } catch (e) {
-      print('❌ Error starting speech recognition: $e');
       _isListening = false;
+      onResult('__MIC_BLOCKED__', true);
     }
   }
 
-  // Stop listening
   Future<void> stopListening() async {
     if (!_isListening || _recognition == null) return;
-
     try {
       _recognition!.stop();
-      _isListening = false;
-    } catch (e) {
-      print('❌ Error stopping recognition: $e');
-    }
+    } catch (_) {}
+    _isListening = false;
   }
 
-  // Speak response
+  // ---------------------------------------------------------------------------
+  // Speech synthesis
+  // ---------------------------------------------------------------------------
+
   Future<void> speak(String text) async {
     if (_synthesis == null) {
-      await initialize();
+      _synthesis = html.window.speechSynthesis;
     }
-
     try {
       _lastResponse = text;
-
-      // Cancel any ongoing speech
       _synthesis!.cancel();
-
-      // Create utterance
       final utterance = html.SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.rate = 0.9;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
-
-      // Speak
       _synthesis!.speak(utterance);
     } catch (e) {
-      print('❌ Error speaking: $e');
+      // Silently ignore TTS errors — the UI already shows the text
     }
   }
 
-  // Stop speaking
   Future<void> stopSpeaking() async {
     try {
       _synthesis?.cancel();
-    } catch (e) {
-      print('❌ Error stopping speech: $e');
-    }
+    } catch (_) {}
   }
 
-  // Process voice command
+  // ---------------------------------------------------------------------------
+  // Command processing
+  // ---------------------------------------------------------------------------
+
   Future<String> processCommand(String command) async {
-    // First normalize the text to correct common recognition errors
-    final normalizedCommand = _normalizeText(command);
-    final lowerCommand = normalizedCommand.toLowerCase().trim();
+    if (command.startsWith('__')) return '';
+
+    final normalized = _normalizeText(command);
+    final cmd = normalized.toLowerCase().trim();
 
     try {
-      // STATUS COMMANDS
-      if (_containsAny(lowerCommand, ['status of all bins', 'bin status', 'show status'])) {
-        return await _getSystemStatus();
+      // Detect which bins the user is asking about
+      final binTarget = _resolveBinTarget(cmd);
+
+      // Intent detection in priority order
+      if (_hasIntent(cmd, ['most full', 'fullest', 'which bin is full', 'which bin full'])) {
+        return await _getMostFullBin(binTarget);
       }
 
-      if (_containsAny(lowerCommand, ['how many bins online', 'bins online', 'online bins'])) {
-        return await _getOnlineBinsCount();
-      }
-
-      if (_containsAny(lowerCommand, ['how many bins offline', 'bins offline', 'offline bins'])) {
-        return await _getOfflineBinsCount();
-      }
-
-      if (_containsAny(lowerCommand, ['system health', 'health status'])) {
-        return await _getSystemHealth();
-      }
-
-      // FILL LEVEL COMMANDS
-      if (_containsAny(lowerCommand, ['fill level', 'how full'])) {
-        return await _getFillLevel(lowerCommand);
-      }
-
-      if (_containsAny(lowerCommand, ['which bin is most full', 'most full', 'fullest bin'])) {
-        return await _getMostFullBin();
-      }
-
-      if (_containsAny(lowerCommand, ['show me all fill levels', 'all fill levels', 'all levels'])) {
+      if (_fillIntent(cmd) && binTarget == 'all') {
         return await _getAllFillLevels();
       }
 
-      // SAFETY ALERT COMMANDS
-      if (_containsAny(lowerCommand, ['safety alert', 'safety warning', 'dangerous'])) {
-        return await _getSafetyAlerts(null);
+      if (_fillIntent(cmd)) {
+        return await _getFillLevelForTarget(cmd, binTarget);
       }
 
-      if (_containsAny(lowerCommand, ['battery alert', 'battery detected', 'battery warning'])) {
-        return await _getSafetyAlerts('BATTERY_DETECTED');
+      if (_hasIntent(cmd, ['health', 'system health', 'overall health', 'health score'])) {
+        return await _getSystemHealth();
       }
 
-      if (_containsAny(lowerCommand, ['gas alert', 'gas detected', 'harmful gas', 'gas warning'])) {
-        return await _getSafetyAlerts('HARMFUL_GAS');
+      if (_statusIntent(cmd)) {
+        return await _getSystemStatus();
       }
 
-      if (_containsAny(lowerCommand, ['moisture alert', 'moisture detected', 'moisture warning', 'water detected'])) {
-        return await _getSafetyAlerts('MOISTURE_DETECTED');
+      if (_safetyIntent(cmd)) {
+        return await _getSafetyAlerts(_detectSafetyType(cmd));
       }
 
-      // GENERAL ALERT COMMANDS
-      if (_containsAny(lowerCommand, ['active alerts', 'any alerts', 'show alerts'])) {
+      if (_alertIntent(cmd)) {
         return await _getActiveAlerts();
       }
 
-      if (_containsAny(lowerCommand, ['how many alerts', 'alert count'])) {
-        return await _getAlertCount();
+      if (_analyticsIntent(cmd)) {
+        return await _getAnalytics(cmd);
       }
 
-      // ANALYTICS COMMANDS
-      if (_containsAny(lowerCommand, ['collected today', 'items today'])) {
-        return await _getItemsCollected(TimeFilter.day);
-      }
-
-      if (_containsAny(lowerCommand, ['collected this week', 'items this week', 'weekly collection'])) {
-        return await _getItemsCollected(TimeFilter.week);
-      }
-
-      if (_containsAny(lowerCommand, ['collected this month', 'items this month', 'monthly collection'])) {
-        return await _getItemsCollected(TimeFilter.month);
-      }
-
-      if (_containsAny(lowerCommand, ['show statistics', 'statistics', 'stats'])) {
-        return await _getStatistics();
-      }
-
-      if (_containsAny(lowerCommand, ['most collected', 'most common', 'top waste'])) {
-        return await _getMostCollectedType();
-      }
-
-      return "I didn't understand that command. Try asking about bin status, fill levels, alerts, safety warnings, or statistics.";
+      return "I didn't understand that. Try asking: "
+          "\"What's the fill level of all bins?\", "
+          "\"Which bin is most full?\", "
+          "\"Are there any safety alerts?\", "
+          "\"How many items collected this week?\", or "
+          "\"What's the system health?\"";
     } catch (e) {
-      print('Error processing command: $e');
       return "Sorry, I encountered an error processing your request.";
     }
   }
 
-  // Helper methods
-  bool _containsAny(String text, List<String> keywords) {
-    return keywords.any((keyword) => text.contains(keyword));
+  // ---------------------------------------------------------------------------
+  // Intent helpers
+  // ---------------------------------------------------------------------------
+
+  bool _fillIntent(String cmd) {
+    return _hasIntent(cmd, [
+      'fill', 'capacity', 'how full', 'percent', 'fullest', 'most full', 'level',
+    ]);
   }
 
-  // Word-form numbers to digits
-  static const Map<String, String> _wordNumbers = {
-    'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
-    'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10',
-    'first': '1', 'second': '2', 'third': '3',
-  };
+  bool _statusIntent(String cmd) {
+    return _hasIntent(cmd, [
+      'status', 'online', 'offline', 'working', 'operational', 'active',
+      'how many bins', 'number of bins',
+    ]);
+  }
 
-  // Extract bin number from command (e.g., "bin 2", "bin two", "#3")
-  String _extractBinNumber(String command) {
-    // First convert word-form numbers near "bin" to digits
-    String processed = command;
-    _wordNumbers.forEach((word, digit) {
-      processed = processed.replaceAllMapped(
-        RegExp('bin\\s+$word\\b', caseSensitive: false),
-        (m) => 'bin $digit',
-      );
-      processed = processed.replaceAllMapped(
-        RegExp('bin\\s+number\\s+$word\\b', caseSensitive: false),
-        (m) => 'bin number $digit',
-      );
-    });
+  bool _safetyIntent(String cmd) {
+    return _hasIntent(cmd, [
+      'safety', 'battery', 'harmful gas', 'gas alert', 'moisture', 'hazard',
+      'toxic', 'dangerous',
+    ]);
+  }
 
-    // Look for patterns like "bin 1", "bin number 2", "#3", "bin_001"
-    final patterns = [
+  bool _alertIntent(String cmd) {
+    return _hasIntent(cmd, [
+      'alert', 'alarm', 'warning', 'issue', 'problem',
+    ]);
+  }
+
+  bool _analyticsIntent(String cmd) {
+    return _hasIntent(cmd, [
+      'collected', 'collection', 'piece', 'item', 'recycle', 'stat',
+      'today', 'week', 'month', 'most common', 'top waste',
+    ]);
+  }
+
+  bool _hasIntent(String cmd, List<String> keywords) {
+    return keywords.any((kw) => cmd.contains(kw));
+  }
+
+  String? _detectSafetyType(String cmd) {
+    if (cmd.contains('battery')) return 'BATTERY_DETECTED';
+    if (cmd.contains('gas')) return 'HARMFUL_GAS';
+    if (cmd.contains('moisture') || cmd.contains('water')) return 'MOISTURE_DETECTED';
+    return null;
+  }
+
+  TimeFilter _detectTimeFilter(String cmd) {
+    if (cmd.contains('today') || cmd.contains(' day')) return TimeFilter.day;
+    if (cmd.contains('month')) return TimeFilter.month;
+    return TimeFilter.week;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Bin target resolution
+  // ---------------------------------------------------------------------------
+
+  /// Returns a bin ID string, 'all', or a position index as '1'/'2'/...
+  String _resolveBinTarget(String cmd) {
+    // Aggregate keywords
+    if (_hasIntent(cmd, ['all', 'every', 'each'])) return 'all';
+
+    // Location name keywords
+    const locationMap = {
+      'dining': 'DIN_HALL_01',
+      'library': 'LIB_L1_02',
+      'dorm': 'DORM_A_03',
+      'park': 'PARK_N_04',
+      'science lab': 'LAB_SCI_05',
+      'lab': 'LAB_SCI_05',
+      'cafe': 'CAFE_B_06',
+      'cafeteria': 'CAFE_B_06',
+      'gym': 'GYM_FL_07',
+    };
+    for (final entry in locationMap.entries) {
+      if (cmd.contains(entry.key)) return entry.value;
+    }
+
+    // Word numbers: "bin one", "second bin"
+    const wordPos = {
+      'first': '1', 'one': '1',
+      'second': '2', 'two': '2',
+      'third': '3', 'three': '3',
+      'fourth': '4', 'four': '4',
+      'fifth': '5', 'five': '5',
+      'sixth': '6', 'six': '6',
+      'seventh': '7', 'seven': '7',
+    };
+    for (final entry in wordPos.entries) {
+      final patterns = [
+        RegExp('bin\\s+${entry.key}\\b'),
+        RegExp('${entry.key}\\s+bin\\b'),
+        RegExp('bin\\s+number\\s+${entry.key}\\b'),
+      ];
+      if (patterns.any((p) => p.hasMatch(cmd))) return entry.value;
+    }
+
+    // Numeric: "bin 1", "bin number 3", "#2"
+    final numPatterns = [
       RegExp(r'bin\s+number\s+(\d+)', caseSensitive: false),
       RegExp(r'bin\s+#?(\d+)', caseSensitive: false),
       RegExp(r'#(\d+)'),
-      RegExp(r'bin_(\d+)', caseSensitive: false),
       RegExp(r'number\s+(\d+)', caseSensitive: false),
     ];
-
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(processed);
-      if (match != null) {
-        final num = match.group(1)!;
-        return 'BIN_${num.padLeft(3, '0')}';
-      }
+    for (final p in numPatterns) {
+      final m = p.firstMatch(cmd);
+      if (m != null) return m.group(1)!;
     }
-    return 'BIN_001'; // Default to BIN_001 when no bin specified
+
+    // Default: all bins
+    return 'all';
   }
 
-  // Normalize common speech recognition errors
-  String _normalizeText(String text) {
-    String normalized = text.toLowerCase();
+  // ---------------------------------------------------------------------------
+  // Bin fetching
+  // ---------------------------------------------------------------------------
 
-    // Common misrecognitions - map wrong words to correct ones
-    final corrections = {
-      // Bins/Bin variations
-      r'\bbeans?\b': 'bins',
-      r'\bben\b': 'bin',
-      r'\bpin\b': 'bin',
-      r'\bbeen\b': 'bin',
-      r'\bbing?\b': 'bin',
-      r'\bbins?\b': 'bins',
+  Future<List<Map<String, dynamic>>> _fetchBins() async {
+    if (FirestoreService.isDemoMode) {
+      return List<Map<String, dynamic>>.from(_demoBins);
+    }
 
-      // Cans variations
-      r'\bchance\b': 'cans',
-      r'\bkenz\b': 'cans',
-      r'\bkans\b': 'cans',
-
-      // Status variations
-      r'\bstadiums?\b': 'status',
-      r'\bstattus\b': 'status',
-
-      // Fill level variations
-      r'\bphil\b': 'fill',
-      r'\bfeel\b': 'fill',
-      r'\bfield\b': 'fill',
-
-      // Alert variations
-      r'\balarms?\b': 'alert',
-      r'\balerts?\b': 'alert',
-
-      // Waste types
-      r'\bplastik\b': 'plastic',
-      r'\bplastick\b': 'plastic',
-      r'\bpapper\b': 'paper',
-      r'\borgenik\b': 'organic',
-
-      // Safety alert terms
-      r'\bbatter\b': 'battery',
-      r'\bgass\b': 'gas',
-      r'\bmoister\b': 'moisture',
-      r'\bsaftey\b': 'safety',
-      r'\bsafty\b': 'safety',
-
-      // Numbers (only when clearly not valid English)
-      r'\bwon\b': 'one',
-      r'\btoo\b': 'two',
-      r'\btree\b': 'three',
-    };
-
-    // Apply corrections
-    corrections.forEach((pattern, replacement) {
-      normalized = normalized.replaceAll(RegExp(pattern, caseSensitive: false), replacement);
-    });
-
-    print('🔧 Normalized: "$text" → "$normalized"');
-    return normalized;
+    final snapshot = await FirebaseFirestore.instance.collection('bins').get();
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      return {
+        'id': doc.id,
+        'name': data['name'] ?? data['location'] ?? doc.id,
+        'status': data['status'] ?? 'offline',
+        'fillLevel': data['fillLevel'],
+        ...data,
+      };
+    }).toList();
   }
+
+  Future<int> _fetchBinFillLevel(String binId) async {
+    if (FirestoreService.isDemoMode) {
+      final match = _demoBins.firstWhere(
+        (b) => b['id'] == binId,
+        orElse: () => {'fill': 0},
+      );
+      return (match['fill'] as num?)?.toInt() ?? 0;
+    }
+
+    // Try subBins collection first
+    final subBinsSnap = await FirebaseFirestore.instance
+        .collection('bins')
+        .doc(binId)
+        .collection('subBins')
+        .get();
+
+    if (subBinsSnap.docs.isNotEmpty) {
+      int total = 0;
+      for (final doc in subBinsSnap.docs) {
+        final val = doc.data()['currentFillPercent'];
+        if (val != null) total += (val as num).toInt();
+      }
+      return (total / subBinsSnap.docs.length).round();
+    }
+
+    // Fall back to fillLevel on the bin doc
+    final binDoc = await FirebaseFirestore.instance.collection('bins').doc(binId).get();
+    final fillLevel = binDoc.data()?['fillLevel'];
+    return fillLevel != null ? (fillLevel as num).toInt() : 0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Response generators
+  // ---------------------------------------------------------------------------
 
   Future<String> _getSystemStatus() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance.collection('bins').get();
-      final bins = snapshot.docs;
+    final bins = await _fetchBins();
+    if (bins.isEmpty) return "No bins are configured in the system.";
 
-      if (bins.isEmpty) return "No bins are configured in the system.";
-
-      int online = 0, offline = 0, maintenance = 0;
-
-      for (final bin in bins) {
-        final status = bin.data()['status'] ?? 'offline';
-        if (status == 'online') online++;
-        else if (status == 'maintenance') maintenance++;
-        else offline++;
-      }
-
-      return "System status: ${bins.length} total bins. $online online, $offline offline, $maintenance in maintenance.";
-    } catch (e) {
-      return "Unable to fetch bin status.";
+    if (FirestoreService.isDemoMode) {
+      return "System status: ${bins.length} bins total — all online and operating normally.";
     }
-  }
 
-  Future<String> _getOnlineBinsCount() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance.collection('bins').get();
-      final onlineCount = snapshot.docs.where((doc) => doc.data()['status'] == 'online').length;
-      return "$onlineCount bins are currently online.";
-    } catch (e) {
-      return "Unable to fetch online bins count.";
+    int online = 0, offline = 0, maintenance = 0;
+    for (final bin in bins) {
+      final s = (bin['status'] as String?) ?? 'offline';
+      if (s == 'online') online++;
+      else if (s == 'maintenance') maintenance++;
+      else offline++;
     }
-  }
 
-  Future<String> _getOfflineBinsCount() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance.collection('bins').get();
-      final offlineCount = snapshot.docs.where((doc) => doc.data()['status'] == 'offline').length;
-      return "$offlineCount bins are currently offline.";
-    } catch (e) {
-      return "Unable to fetch offline bins count.";
-    }
+    final parts = <String>[];
+    if (online > 0) parts.add('$online online');
+    if (offline > 0) parts.add('$offline offline');
+    if (maintenance > 0) parts.add('$maintenance in maintenance');
+
+    return "System status: ${bins.length} total bins — ${parts.join(', ')}.";
   }
 
   Future<String> _getSystemHealth() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance.collection('bins').get();
-      final bins = snapshot.docs;
+    final bins = await _fetchBins();
+    if (bins.isEmpty) return "No bins are configured.";
 
-      if (bins.isEmpty) return "No bins configured.";
-
-      int online = bins.where((doc) => doc.data()['status'] == 'online').length;
-      int offline = bins.where((doc) => doc.data()['status'] == 'offline').length;
-      int maintenance = bins.where((doc) => doc.data()['status'] == 'maintenance').length;
-
-      double healthPercent = (online / bins.length * 100).round().toDouble();
-
-      return "System health is ${healthPercent.toInt()}%. $online bins online, $offline offline, $maintenance in maintenance.";
-    } catch (e) {
-      return "Unable to calculate system health.";
+    if (FirestoreService.isDemoMode) {
+      final avgFill = _demoBins
+          .map((b) => b['fill'] as int)
+          .reduce((a, b) => a + b) ~/
+          _demoBins.length;
+      final healthScore = (100 - avgFill).clamp(0, 100);
+      return "System health score is $healthScore out of 100. "
+          "${_demoBins.length} bins active with an average fill level of $avgFill%.";
     }
+
+    int online = 0, offline = 0, maintenance = 0;
+    for (final bin in bins) {
+      final s = (bin['status'] as String?) ?? 'offline';
+      if (s == 'online') online++;
+      else if (s == 'maintenance') maintenance++;
+      else offline++;
+    }
+
+    final healthScore = (online / bins.length * 100).round();
+    String healthLabel;
+    if (healthScore >= 90) healthLabel = 'Excellent';
+    else if (healthScore >= 70) healthLabel = 'Good';
+    else if (healthScore >= 50) healthLabel = 'Fair';
+    else healthLabel = 'Poor';
+
+    return "System health is $healthScore% ($healthLabel). "
+        "$online bins online, $offline offline, $maintenance in maintenance.";
   }
 
-  Future<String> _getFillLevel(String command) async {
-    try {
-      String? binType;
-      if (command.contains('plastic')) binType = 'plastic';
-      else if (command.contains('paper')) binType = 'paper';
-      else if (command.contains('organic')) binType = 'organic';
-      else if (command.contains('cans')) binType = 'cans';
-      else if (command.contains('mixed')) binType = 'mixed';
+  Future<String> _getFillLevelForTarget(String cmd, String target) async {
+    final bins = await _fetchBins();
+    if (bins.isEmpty) return "No bins are configured.";
 
-      if (binType == null) {
-        return "Please specify which bin type: plastic, paper, organic, cans, or mixed.";
+    // Resolve position index or bin ID
+    Map<String, dynamic>? targetBin;
+
+    if (RegExp(r'^\d+$').hasMatch(target)) {
+      // Position-based (1-indexed)
+      final idx = int.parse(target) - 1;
+      if (idx >= 0 && idx < bins.length) {
+        targetBin = bins[idx];
       }
-
-      final binNumber = _extractBinNumber(command);
-
-      final subBinDoc = await FirebaseFirestore.instance
-          .collection('bins')
-          .doc(binNumber)
-          .collection('subBins')
-          .doc(binType)
-          .get();
-
-      if (!subBinDoc.exists) {
-        return "No data available for the $binType bin in $binNumber.";
-      }
-
-      final fillPercent = subBinDoc.data()?['currentFillPercent'] ?? 0;
-      return "The $binType bin in $binNumber is at $fillPercent percent capacity.";
-    } catch (e) {
-      return "Unable to fetch fill level.";
+    } else {
+      // Direct bin ID
+      try {
+        targetBin = bins.firstWhere((b) => b['id'] == target);
+      } catch (_) {}
     }
-  }
 
-  Future<String> _getMostFullBin() async {
-    try {
-      final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
-
-      int maxFill = 0;
-      String mostFullBinType = 'none';
-      String mostFullBinNumber = 'none';
-
-      for (final bin in binsSnapshot.docs) {
-        final subBinsSnapshot = await FirebaseFirestore.instance
-            .collection('bins')
-            .doc(bin.id)
-            .collection('subBins')
-            .get();
-
-        for (final subBin in subBinsSnapshot.docs) {
-          final fillPercent = subBin.data()['currentFillPercent'] ?? 0;
-          if (fillPercent > maxFill) {
-            maxFill = fillPercent;
-            mostFullBinType = subBin.id;
-            mostFullBinNumber = bin.id;
-          }
-        }
-      }
-
-      if (maxFill == 0) return "All bins are empty.";
-
-      return "The $mostFullBinType bin in $mostFullBinNumber is the most full at $maxFill percent capacity.";
-    } catch (e) {
-      return "Unable to determine most full bin.";
+    if (targetBin == null) {
+      return "I couldn't find that bin. Try asking about all bins or a specific bin by name.";
     }
+
+    final fillLevel = await _fetchBinFillLevel(targetBin['id'] as String);
+    final name = targetBin['name'] as String? ?? targetBin['id'] as String;
+    return "The $name bin is currently at $fillLevel% capacity.";
   }
 
   Future<String> _getAllFillLevels() async {
-    try {
-      final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
+    final bins = await _fetchBins();
+    if (bins.isEmpty) return "No bins are configured.";
 
-      if (binsSnapshot.docs.isEmpty) return "No bins configured.";
-
-      final levels = <String>[];
-
-      for (final bin in binsSnapshot.docs) {
-        final subBinsSnapshot = await FirebaseFirestore.instance
-            .collection('bins')
-            .doc(bin.id)
-            .collection('subBins')
-            .get();
-
-        if (subBinsSnapshot.docs.isNotEmpty) {
-          for (final subBin in subBinsSnapshot.docs) {
-            final fillPercent = subBin.data()['currentFillPercent'] ?? 0;
-            levels.add("${bin.id} ${subBin.id}: $fillPercent percent");
-          }
-        }
-      }
-
-      if (levels.isEmpty) return "No fill level data available.";
-
-      return "Current fill levels: ${levels.join(', ')}.";
-    } catch (e) {
-      return "Unable to fetch fill levels.";
+    if (FirestoreService.isDemoMode) {
+      final levels = _demoBins
+          .map((b) => "${b['name']}: ${b['fill']}%")
+          .join(', ');
+      return "Current fill levels — $levels.";
     }
+
+    final results = <String>[];
+    for (final bin in bins) {
+      final fill = await _fetchBinFillLevel(bin['id'] as String);
+      final name = (bin['name'] as String?) ?? bin['id'] as String;
+      results.add("$name: $fill%");
+    }
+
+    if (results.isEmpty) return "No fill level data available.";
+    return "Current fill levels — ${results.join(', ')}.";
+  }
+
+  Future<String> _getMostFullBin(String binTarget) async {
+    final bins = await _fetchBins();
+    if (bins.isEmpty) return "No bins are configured.";
+
+    if (FirestoreService.isDemoMode) {
+      final sorted = List<Map<String, dynamic>>.from(_demoBins)
+        ..sort((a, b) => (b['fill'] as int).compareTo(a['fill'] as int));
+      final top = sorted.first;
+      return "The most full bin is ${top['name']} at ${top['fill']}% capacity.";
+    }
+
+    int maxFill = -1;
+    String maxName = '';
+
+    for (final bin in bins) {
+      final fill = await _fetchBinFillLevel(bin['id'] as String);
+      if (fill > maxFill) {
+        maxFill = fill;
+        maxName = (bin['name'] as String?) ?? bin['id'] as String;
+      }
+    }
+
+    if (maxFill < 0) return "No fill level data available.";
+    return "The most full bin is $maxName at $maxFill% capacity.";
   }
 
   Future<String> _getSafetyAlerts(String? alertType) async {
-    try {
-      final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
+    if (FirestoreService.isDemoMode) {
+      final typeLabel = alertType == 'BATTERY_DETECTED'
+          ? 'battery'
+          : alertType == 'HARMFUL_GAS'
+              ? 'harmful gas'
+              : alertType == 'MOISTURE_DETECTED'
+                  ? 'moisture'
+                  : 'safety';
+      return "No active $typeLabel alerts in demo mode. All clear.";
+    }
 
-      final safetyTypes = {'BATTERY_DETECTED', 'HARMFUL_GAS', 'MOISTURE_DETECTED'};
-      final targetType = alertType;
+    final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
+    const safetyTypes = {'BATTERY_DETECTED', 'HARMFUL_GAS', 'MOISTURE_DETECTED'};
 
-      int totalCount = 0;
-      final details = <String>[];
+    int totalCount = 0;
+    final details = <String>[];
 
-      for (final bin in binsSnapshot.docs) {
-        final alertsSnapshot = await FirebaseFirestore.instance
-            .collection('bins')
-            .doc(bin.id)
-            .collection('alerts')
-            .where('isResolved', isEqualTo: false)
-            .get();
+    for (final bin in binsSnapshot.docs) {
+      var query = FirebaseFirestore.instance
+          .collection('bins')
+          .doc(bin.id)
+          .collection('alerts')
+          .where('isResolved', isEqualTo: false);
 
-        for (final alert in alertsSnapshot.docs) {
-          final data = alert.data();
-          final type = data['alertType'] as String? ?? '';
-          if (targetType != null ? type == targetType : safetyTypes.contains(type)) {
-            final label = type == 'BATTERY_DETECTED' ? 'battery'
-                : type == 'HARMFUL_GAS' ? 'harmful gas'
-                : 'moisture';
-            details.add("${bin.id}: $label");
-            totalCount++;
-          }
+      final alertsSnapshot = await query.get();
+
+      for (final alert in alertsSnapshot.docs) {
+        final data = alert.data();
+        final type = (data['alertType'] as String?) ?? '';
+        if (alertType != null ? type == alertType : safetyTypes.contains(type)) {
+          final label = type == 'BATTERY_DETECTED'
+              ? 'battery'
+              : type == 'HARMFUL_GAS'
+                  ? 'harmful gas'
+                  : 'moisture';
+          final binName = (bin.data()['name'] as String?) ?? bin.id;
+          details.add("$binName: $label");
+          totalCount++;
         }
       }
-
-      if (totalCount == 0) {
-        if (targetType == 'BATTERY_DETECTED') return "No active battery alerts.";
-        if (targetType == 'HARMFUL_GAS') return "No active harmful gas alerts.";
-        if (targetType == 'MOISTURE_DETECTED') return "No active moisture alerts.";
-        return "No active safety alerts. All clear.";
-      }
-
-      final typeLabel = targetType == 'BATTERY_DETECTED' ? 'battery'
-          : targetType == 'HARMFUL_GAS' ? 'harmful gas'
-          : targetType == 'MOISTURE_DETECTED' ? 'moisture'
-          : 'safety';
-
-      return "There are $totalCount active $typeLabel alerts. ${details.join(', ')}.";
-    } catch (e) {
-      return "Unable to fetch safety alerts.";
     }
+
+    if (totalCount == 0) {
+      final typeLabel = alertType == 'BATTERY_DETECTED'
+          ? 'battery'
+          : alertType == 'HARMFUL_GAS'
+              ? 'harmful gas'
+              : alertType == 'MOISTURE_DETECTED'
+                  ? 'moisture'
+                  : 'safety';
+      return "No active $typeLabel alerts. All clear.";
+    }
+
+    final typeLabel = alertType == 'BATTERY_DETECTED'
+        ? 'battery'
+        : alertType == 'HARMFUL_GAS'
+            ? 'harmful gas'
+            : alertType == 'MOISTURE_DETECTED'
+                ? 'moisture'
+                : 'safety';
+
+    return "There ${totalCount == 1 ? 'is' : 'are'} $totalCount active $typeLabel "
+        "${totalCount == 1 ? 'alert' : 'alerts'}: ${details.join('; ')}.";
   }
 
   Future<String> _getActiveAlerts() async {
-    try {
-      final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
-
-      int totalAlerts = 0;
-      final alertsByBin = <String, int>{};
-
-      for (final bin in binsSnapshot.docs) {
-        final alertsSnapshot = await FirebaseFirestore.instance
-            .collection('bins')
-            .doc(bin.id)
-            .collection('alerts')
-            .where('isResolved', isEqualTo: false)
-            .get();
-
-        if (alertsSnapshot.docs.isNotEmpty) {
-          alertsByBin[bin.id] = alertsSnapshot.docs.length;
-          totalAlerts += alertsSnapshot.docs.length;
-        }
-      }
-
-      if (totalAlerts == 0) {
-        return "There are no active alerts. All systems normal.";
-      }
-
-      final binDetails = alertsByBin.entries
-          .map((e) => "${e.key}: ${e.value} alerts")
-          .join(', ');
-
-      return "There are $totalAlerts active alerts across ${alertsByBin.length} bins. $binDetails.";
-    } catch (e) {
-      return "Unable to fetch alerts.";
+    if (FirestoreService.isDemoMode) {
+      return "No active alerts in demo mode. All systems normal.";
     }
+
+    final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
+    int totalAlerts = 0;
+    final alertsByBin = <String, int>{};
+
+    for (final bin in binsSnapshot.docs) {
+      final alertsSnapshot = await FirebaseFirestore.instance
+          .collection('bins')
+          .doc(bin.id)
+          .collection('alerts')
+          .where('isResolved', isEqualTo: false)
+          .get();
+
+      if (alertsSnapshot.docs.isNotEmpty) {
+        final binName = (bin.data()['name'] as String?) ?? bin.id;
+        alertsByBin[binName] = alertsSnapshot.docs.length;
+        totalAlerts += alertsSnapshot.docs.length;
+      }
+    }
+
+    if (totalAlerts == 0) return "There are no active alerts. All systems normal.";
+
+    final binDetails = alertsByBin.entries
+        .map((e) => "${e.key}: ${e.value} ${e.value == 1 ? 'alert' : 'alerts'}")
+        .join(', ');
+
+    return "There ${totalAlerts == 1 ? 'is' : 'are'} $totalAlerts active "
+        "${totalAlerts == 1 ? 'alert' : 'alerts'} across ${alertsByBin.length} "
+        "${alertsByBin.length == 1 ? 'bin' : 'bins'}. $binDetails.";
   }
 
-  Future<String> _getAlertCount() async {
-    try {
-      final binsSnapshot = await FirebaseFirestore.instance.collection('bins').get();
+  Future<String> _getAnalytics(String cmd) async {
+    final filter = _detectTimeFilter(cmd);
+    final askingMost = _hasIntent(cmd, ['most common', 'top waste', 'most collected', 'most']);
 
-      int totalCount = 0;
-
-      for (final bin in binsSnapshot.docs) {
-        final alertsSnapshot = await FirebaseFirestore.instance
-            .collection('bins')
-            .doc(bin.id)
-            .collection('alerts')
-            .where('isResolved', isEqualTo: false)
-            .get();
-
-        totalCount += alertsSnapshot.docs.length;
-      }
-
-      if (totalCount == 0) return "There are no active alerts.";
-      else if (totalCount == 1) return "There is 1 active alert.";
-      else return "There are $totalCount active alerts across all bins.";
-    } catch (e) {
-      return "Unable to count alerts.";
-    }
-  }
-
-  Future<String> _getItemsCollected(TimeFilter filter) async {
     try {
       final data = await _firestoreService.getAllBinsPieceCount(filter).first;
-      final total = data.values.fold(0, (sum, count) => sum + count);
+      final total = data.values.fold(0, (sum, v) => sum + v);
 
-      final timeLabel = filter == TimeFilter.day ? 'today' :
-                       filter == TimeFilter.week ? 'this week' : 'this month';
+      final timeLabel = filter == TimeFilter.day
+          ? 'today'
+          : filter == TimeFilter.week
+              ? 'this week'
+              : 'this month';
 
       if (total == 0) return "No items collected $timeLabel.";
 
-      final breakdown = data.entries
+      final sorted = data.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+
+      if (askingMost) {
+        final top = sorted.first;
+        return "The most collected waste type $timeLabel is ${top.key} with ${top.value} items.";
+      }
+
+      final top3 = sorted
           .where((e) => e.value > 0)
+          .take(3)
           .map((e) => "${e.key}: ${e.value}")
           .join(', ');
 
-      return "$timeLabel, $total items collected. $breakdown.";
+      return "$total items collected $timeLabel. Top categories: $top3.";
     } catch (e) {
       return "Unable to fetch collection statistics.";
     }
   }
 
-  Future<String> _getStatistics() async {
-    try {
-      final data = await _firestoreService.getAllBinsPieceCount(TimeFilter.week).first;
-      final total = data.values.fold(0, (sum, count) => sum + count);
+  // ---------------------------------------------------------------------------
+  // Text normalization
+  // ---------------------------------------------------------------------------
 
-      if (total == 0) return "No statistics available for this week.";
+  String _normalizeText(String text) {
+    String n = text.toLowerCase().trim();
 
-      final sorted = data.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-      final top3 = sorted.take(3).map((e) => "${e.key}: ${e.value}").join(', ');
+    final corrections = <String, String>{
+      // bin / bins
+      r'\bbeans?\b': 'bins',
+      r'\bbeen\b': 'bin',
+      r'\bben\b': 'bin',
+      r'\bpin\b': 'bin',
+      r'\bbun\b': 'bin',
+      r'\bbing\b': 'bin',
 
-      return "This week: $total total items. Top categories: $top3.";
-    } catch (e) {
-      return "Unable to fetch statistics.";
-    }
+      // fill
+      r'\bfeel\b': 'fill',
+      r'\bfin\b': 'fill',
+      r'\bfile\b': 'fill',
+      r'\bfield\b': 'fill',
+      r'\bphil\b': 'fill',
+      r'\bfell\b': 'fill',
+      r'\bfilm\b': 'fill',
+      r'\bfull level\b': 'fill level',
+
+      // status
+      r'\bstadiums?\b': 'status',
+      r'\bstattus\b': 'status',
+
+      // alert / safety
+      r'\balarms?\b': 'alert',
+      r'\bsaftey\b': 'safety',
+      r'\bsafty\b': 'safety',
+
+      // waste types
+      r'\bplastik\b': 'plastic',
+      r'\bplastick\b': 'plastic',
+      r'\bpapper\b': 'paper',
+      r'\borgenik\b': 'organic',
+
+      // safety alert terms
+      r'\bbatter\b': 'battery',
+      r'\bgass\b': 'gas',
+      r'\bmoister\b': 'moisture',
+
+      // cans
+      r'\bchance\b': 'cans',
+      r'\bkanz\b': 'cans',
+      r'\bkans\b': 'cans',
+
+      // number words that conflict with vocabulary
+      r'\bwon\b': 'one',
+      r'\btoo\b': 'two',
+      r'\btree\b': 'three',
+
+      // online / offline spacing
+      r'\bon line\b': 'online',
+      r'\boff line\b': 'offline',
+    };
+
+    corrections.forEach((pattern, replacement) {
+      n = n.replaceAll(RegExp(pattern, caseSensitive: false), replacement);
+    });
+
+    return n;
   }
 
-  Future<String> _getMostCollectedType() async {
-    try {
-      final data = await _firestoreService.getAllBinsPieceCount(TimeFilter.week).first;
-
-      if (data.isEmpty || data.values.every((v) => v == 0)) {
-        return "No collection data available.";
-      }
-
-      final maxEntry = data.entries.reduce((a, b) => a.value > b.value ? a : b);
-
-      return "The most collected waste type this week is ${maxEntry.key} with ${maxEntry.value} items.";
-    } catch (e) {
-      return "Unable to determine most collected type.";
-    }
-  }
+  // ---------------------------------------------------------------------------
+  // Dispose
+  // ---------------------------------------------------------------------------
 
   void dispose() {
     stopListening();

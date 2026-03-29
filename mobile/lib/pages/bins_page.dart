@@ -497,8 +497,9 @@ class _QuickStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppStateProvider>(context);
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('bins').snapshots(),
+      stream: appState.binsStream,
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
 
@@ -708,19 +709,13 @@ class _ModernBinCardState extends State<_ModernBinCard>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appState = Provider.of<AppStateProvider>(context);
 
     // STREAM BUILDER TO LISTEN TO STATUS CHANGES
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('bins')
-          .doc(widget.binId)
-          .snapshots(),
+    return StreamBuilder<String>(
+      stream: appState.binStatusStream(widget.binId),
       builder: (context, snapshot) {
-        // Get current status from Firebase (real-time)
-        final status = snapshot.hasData
-            ? ((snapshot.data!.data() as Map<String, dynamic>?)?['status'] ??
-                  'offline')
-            : 'offline';
+        final status = snapshot.data ?? 'offline';
 
         final statusColor = _getStatusColor(status);
         final statusLabel = _getStatusLabel(status);

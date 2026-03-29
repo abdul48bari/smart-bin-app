@@ -421,7 +421,7 @@ class _TotalPiecesCard extends StatelessWidget {
                   children: [
                     TweenAnimationBuilder<int>(
                       tween: IntTween(begin: 0, end: total),
-                      duration: const Duration(milliseconds: 1000),
+                      duration: const Duration(milliseconds: 400),
                       curve: Curves.easeOutCubic,
                       builder: (context, value, child) {
                         return Text(
