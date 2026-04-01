@@ -15,13 +15,9 @@ const config: Config = {
           dark: '#4f46e5',
         },
         teal: {
-          DEFAULT: '#14b8a6',
-          light: '#2dd4bf',
-          dark: '#0d9488',
-        },
-        cyan: {
-          DEFAULT: '#06b6d4',
-          light: '#22d3ee',
+          DEFAULT: '#22c55e',
+          light: '#4ade80',
+          dark: '#16a34a',
         },
         surface: {
           light: '#ffffff',

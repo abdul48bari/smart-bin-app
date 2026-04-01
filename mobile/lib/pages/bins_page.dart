@@ -198,8 +198,6 @@ class _HeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GlassContainer(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -334,7 +332,7 @@ class _SystemHealthCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: healthColor.withOpacity(0.2),
+                            color: healthColor.withValues(alpha:0.2),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -453,7 +451,7 @@ class _HealthMetric extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -578,7 +576,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha:0.06),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -732,11 +730,11 @@ class _ModernBinCardState extends State<_ModernBinCard>
                   gradient: LinearGradient(
                     colors: isDark
                         ? [
-                            statusColor.withOpacity(0.08),
+                            statusColor.withValues(alpha:0.08),
                             AppColors.surface(context),
                           ]
                         : [
-                            statusColor.withOpacity(0.06),
+                            statusColor.withValues(alpha:0.06),
                             AppColors.surface(context),
                           ],
                     begin: Alignment.topLeft,
@@ -758,7 +756,7 @@ class _ModernBinCardState extends State<_ModernBinCard>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: statusColor.withOpacity(0.2),
+                                color: statusColor.withValues(alpha:0.2),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -811,7 +809,7 @@ class _ModernBinCardState extends State<_ModernBinCard>
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.15),
+                            color: statusColor.withValues(alpha:0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -917,7 +915,7 @@ class _ModernBinCardState extends State<_ModernBinCard>
                             decoration: BoxDecoration(
                               color: AppColors.textSecondary(
                                 context,
-                              ).withOpacity(0.1),
+                              ).withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -975,7 +973,7 @@ class _ModernBinCardState extends State<_ModernBinCard>
                             Navigator.push(
                               context,
                               PageRouteBuilder(
-                                pageBuilder: (_, __, ___) =>
+                                pageBuilder: (_, _, _) =>
                                     AlertsScreen(binId: widget.binId),
                                 transitionsBuilder:
                                     (
@@ -1082,11 +1080,11 @@ class _SafetyAlertsInlineCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.red.shade900.withOpacity(0.25)
+                ? Colors.red.shade900.withValues(alpha:0.25)
                 : Colors.red.shade50,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: Colors.redAccent.withOpacity(isDark ? 0.4 : 0.25),
+              color: Colors.redAccent.withValues(alpha:isDark ? 0.4 : 0.25),
               width: 1.5,
             ),
           ),
@@ -1113,7 +1111,7 @@ class _SafetyAlertsInlineCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.redAccent.withOpacity(0.15),
+                      color: Colors.redAccent.withValues(alpha:0.15),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -1189,11 +1187,11 @@ class _BinAlertsCard extends StatelessWidget {
             gradient: LinearGradient(
               colors: isDark
                   ? [
-                      accent.withOpacity(0.08),
+                      accent.withValues(alpha:0.08),
                       AppColors.surface(context),
                     ]
                   : [
-                      accent.withOpacity(0.06),
+                      accent.withValues(alpha:0.06),
                       AppColors.surface(context),
                     ],
               begin: Alignment.topLeft,
@@ -1323,7 +1321,7 @@ class _EmptyState extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha:0.06),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -1335,7 +1333,7 @@ class _EmptyState extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: accent.withOpacity(0.1),
+              color: accent.withValues(alpha:0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.inventory_2_outlined, size: 40, color: accent),
@@ -1425,8 +1423,6 @@ void _showStatusMenu(
   String currentStatus,
   Color accent,
 ) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -1444,7 +1440,7 @@ void _showStatusMenu(
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.textSecondary(context).withOpacity(0.3),
+              color: AppColors.textSecondary(context).withValues(alpha:0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1538,7 +1534,7 @@ void _showConfirmationDialog(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: statusInfo['color'].withOpacity(0.15),
+              color: statusInfo['color'].withValues(alpha:0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -1731,7 +1727,7 @@ class _StatusOption extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isSelected
-              ? color.withOpacity(0.1)
+              ? color.withValues(alpha:0.1)
               : AppColors.background(context),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
@@ -1745,7 +1741,7 @@ class _StatusOption extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha:0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),

@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowRight, ArrowUpRight } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Instagram, Linkedin } from 'lucide-react'
 import ScrollReveal from './ScrollReveal'
 import { DEMO_APP_URL, NAV_LINKS } from '@/lib/constants'
 
@@ -9,7 +9,7 @@ export default function Footer() {
   return (
     <footer className="relative">
       {/* CTA Section */}
-      <section className="py-28 md:py-40 relative overflow-hidden">
+      <section className="py-14 md:py-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <ScrollReveal>
             <div className="bento-card p-12 md:p-20 text-center relative overflow-hidden">
@@ -22,7 +22,7 @@ export default function Footer() {
                   Ready to revolutionize<br />
                   <span className="gradient-text">waste management?</span>
                 </h2>
-                <p className="text-neutral-400 text-lg mt-6 max-w-lg mx-auto">
+                <p className="text-neutral-300 text-lg mt-6 max-w-lg mx-auto">
                   Experience the future of smart waste sorting. Try our demo app and see Reclevo in action.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 mt-10">
@@ -35,10 +35,7 @@ export default function Footer() {
                     Launch Demo App
                     <ArrowRight className="w-5 h-5" />
                   </a>
-                  <a
-                    href="#about"
-                    className="btn-secondary text-base px-8 py-4"
-                  >
+                  <a href="#about" className="btn-secondary text-base px-8 py-4">
                     Learn More
                   </a>
                 </div>
@@ -50,23 +47,56 @@ export default function Footer() {
 
       {/* Footer content */}
       <div className="border-t border-neutral-800/50">
-        <div className="max-w-7xl mx-auto px-6 py-16">
+        <div className="max-w-7xl mx-auto px-6 py-10">
           <div className="grid md:grid-cols-12 gap-12">
             {/* Brand */}
             <div className="md:col-span-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-                  <span className="text-white font-display font-bold text-sm">R</span>
-                </div>
-                <span className="text-lg font-display font-bold tracking-tight">eclevo</span>
-              </div>
+              {/* Logo — matches Navbar */}
+              <a href="#" className="group relative overflow-hidden inline-flex items-center">
+                <span
+                  className="text-xl font-display font-black tracking-tight select-none"
+                  style={{ letterSpacing: '-0.03em' }}
+                >
+                  <span className="text-accent transition-colors duration-300 group-hover:text-accent-light">
+                    R
+                  </span>
+                  <span className="text-white">eclevo</span>
+                </span>
+                <span
+                  className="absolute inset-0 pointer-events-none -translate-x-full group-hover:translate-x-full transition-transform duration-700"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
+                  }}
+                />
+              </a>
               <p className="text-neutral-400 mt-4 text-sm leading-relaxed max-w-sm">
                 AI-powered smart garbage bin that automatically sorts waste into 5 categories.
                 Making recycling effortless for a sustainable future.
               </p>
+              {/* Social links */}
+              <div className="flex items-center gap-2 mt-6">
+                <a
+                  href="https://www.instagram.com/recl.evo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-icon"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-icon"
+                  aria-label="LinkedIn"
+                >
+                  <Linkedin className="w-4 h-4" />
+                </a>
+              </div>
             </div>
 
-            {/* Links */}
+            {/* Navigation links */}
             <div className="md:col-span-3">
               <h4 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-4">Navigation</h4>
               <div className="space-y-3">

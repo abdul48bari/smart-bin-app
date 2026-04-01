@@ -6,7 +6,6 @@ import '../services/firestore_service.dart';
 import '../models/alert.dart';
 import '../utils/app_colors.dart';
 import '../utils/shadows.dart';
-import '../widgets/glass_container.dart';
 import '../widgets/clean_container.dart';
 import '../widgets/shimmer_loading.dart';
 import '../providers/app_state_provider.dart';
@@ -239,7 +238,7 @@ class _SafetyAlertCountAggregator extends StatelessWidget {
                   .where('isResolved', isEqualTo: false)
                   .get();
               total += snap.docs.where((d) {
-                final t = (d.data() as Map<String, dynamic>)['alertType'];
+                final t = d.data()['alertType'];
                 return t == 'BATTERY_DETECTED' ||
                     t == 'HARMFUL_GAS' ||
                     t == 'MOISTURE_DETECTED';
@@ -261,7 +260,7 @@ class _SafetyAlertCountAggregator extends StatelessWidget {
               Navigator.push(
                 context,
                 PageRouteBuilder(
-                  pageBuilder: (_, __, ___) =>
+                  pageBuilder: (_, _, _) =>
                       const _SafetyAlertsScreen(),
                   transitionsBuilder:
                       (context, animation, secondaryAnimation, child) {
@@ -291,7 +290,7 @@ class _SafetyAlertCountAggregator extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.redAccent.withOpacity(0.35),
+                    color: Colors.redAccent.withValues(alpha:0.35),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -445,7 +444,7 @@ class _BinSafetySection extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.redAccent.withOpacity(0.12),
+                      color: Colors.redAccent.withValues(alpha:0.12),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -619,10 +618,10 @@ class _SafetyAlertTileState extends State<_SafetyAlertTile> {
       decoration: BoxDecoration(
         color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.25), width: 1.5),
+        border: Border.all(color: color.withValues(alpha:0.25), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -634,7 +633,7 @@ class _SafetyAlertTileState extends State<_SafetyAlertTile> {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha:0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(_alertIcon(), color: color, size: 20),
@@ -759,10 +758,10 @@ class _TopHeader extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.surface(
                 context,
-              ).withOpacity(0.5), // Semi-transparent
+              ).withValues(alpha:0.5), // Semi-transparent
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.textPrimary(context).withOpacity(0.05),
+                color: AppColors.textPrimary(context).withValues(alpha:0.05),
               ),
             ),
             child: Row(
@@ -906,7 +905,7 @@ class _OverviewCards extends StatelessWidget {
                           accent: fullCount > 0 ? Colors.redAccent : accent,
                           background: fullCount > 0
                               ? (isDark
-                                    ? Colors.redAccent.withOpacity(0.15)
+                                    ? Colors.redAccent.withValues(alpha:0.15)
                                     : Colors.red.shade50)
                               : accentSoft,
                         ),
@@ -1194,7 +1193,7 @@ class _WeeklyActivityCard extends StatelessWidget {
       stream: firestoreService.getFullCountsPerSubBin('BIN_001'),
       builder: (context, snapshot) {
         final data = snapshot.data ?? {};
-        final total = data.values.fold(0, (sum, count) => sum + count);
+        final total = data.values.fold(0, (acc, n) => acc + n);
 
         final dailyCounts = _generateDemoCounts(total);
         final maxCount =
@@ -1300,7 +1299,7 @@ class _WeeklyActivityCard extends StatelessWidget {
                                   height: value,
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [accent, accent.withOpacity(0.6)],
+                                      colors: [accent, accent.withValues(alpha:0.6)],
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                     ),
@@ -1695,7 +1694,7 @@ class _BinAlertsExpansionTileState extends State<_BinAlertsExpansionTile>
                   sizeFactor: _expandAnimation,
                   axisAlignment: -1,
                   child: Container(
-                    color: widget.accentSoft.withOpacity(0.3),
+                    color: widget.accentSoft.withValues(alpha:0.3),
                     padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
                     child: alerts.isEmpty
                         ? Row(

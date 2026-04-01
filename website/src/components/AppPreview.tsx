@@ -4,11 +4,13 @@ import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import ScrollReveal from './ScrollReveal'
 import { DEMO_APP_URL } from '@/lib/constants'
+import Particles from './Particles'
 
 export default function AppPreview() {
   return (
-    <section className="py-28 md:py-40 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="py-14 md:py-20 relative overflow-hidden">
+      <Particles particleCount={100} particleSpread={6} speed={0.05} particleColors={['#00d4ff','#7B2FFF','#22c55e']} alphaParticles={true} particleBaseSize={60} />
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Phone Mockup */}
           <ScrollReveal direction="left">
@@ -99,7 +101,7 @@ export default function AppPreview() {
               <h2 className="text-display-md font-display font-extrabold mt-4">
                 Control at your fingertips.
               </h2>
-              <p className="text-lg text-neutral-400 leading-relaxed mt-6">
+              <p className="text-lg text-neutral-300 leading-relaxed mt-6">
                 The Reclevo companion app gives you real-time visibility into every bin.
                 Monitor fill levels, view analytics, receive alerts, and even use voice commands.
               </p>
@@ -114,7 +116,7 @@ export default function AppPreview() {
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
-                    <span className="text-sm text-neutral-400">{item}</span>
+                    <span className="text-sm text-neutral-300">{item}</span>
                   </div>
                 ))}
               </div>

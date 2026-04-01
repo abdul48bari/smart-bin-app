@@ -91,7 +91,7 @@ class _LiveBinStatusCard extends StatelessWidget {
               fillPercent: fillPercent,
               accent: accent,
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -149,7 +149,7 @@ class _SubBinRow extends StatelessWidget {
             height: 38,
             decoration: BoxDecoration(
               color: isDark 
-                  ? Colors.white.withOpacity(0.05)
+                  ? Colors.white.withValues(alpha:0.05)
                   : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(14),
             ),
@@ -187,7 +187,7 @@ class _SubBinRow extends StatelessWidget {
                   child: Container(
                     height: 12,
                     color: isDark 
-                        ? Colors.white.withOpacity(0.1)
+                        ? Colors.white.withValues(alpha:0.1)
                         : Colors.grey.shade200,
                     child: LayoutBuilder(
                       builder: (context, constraints) {
@@ -231,7 +231,7 @@ class _LiveBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: isDark 
-            ? accent.withOpacity(0.2)
+            ? accent.withValues(alpha:0.2)
             : const Color(0xFFE6F4F1),
         borderRadius: BorderRadius.circular(999),
       ),
@@ -287,7 +287,7 @@ class _EmptyCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha:0.06),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),

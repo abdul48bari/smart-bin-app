@@ -28,7 +28,7 @@ class HorizontalBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = data.values.fold(0, (sum, count) => sum + count);
+    final total = data.values.fold(0, (acc, n) => acc + n);
     
     if (total == 0) {
       return Center(
@@ -146,7 +146,7 @@ class _BarRowState extends State<_BarRow>
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: widget.color.withOpacity(0.15),
+                  color: widget.color.withValues(alpha:0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -201,7 +201,7 @@ class _BarRowState extends State<_BarRow>
               height: 14,
               decoration: BoxDecoration(
                 color: isDark 
-                    ? Colors.white.withOpacity(0.1)
+                    ? Colors.white.withValues(alpha:0.1)
                     : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
               ),

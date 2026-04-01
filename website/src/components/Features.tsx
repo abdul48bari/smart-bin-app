@@ -1,161 +1,89 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
-import { motion, useMotionValue, useTransform, useSpring, AnimatePresence } from 'framer-motion'
+import { useRef, useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { ArrowRight } from 'lucide-react'
 import { FEATURES } from '@/lib/constants'
+import SpotlightCard from './SpotlightCard'
 
-// Unique animated backgrounds for each card
-function CardBackground({ color, type }: { color: string; type: number }) {
-  if (type === 0) {
-    // Animated bar chart for Analytics
-    return (
-      <div className="absolute bottom-0 right-0 w-48 h-36 opacity-10 pointer-events-none">
-        <div className="flex items-end gap-2 h-full pb-4 pr-4">
-          {[60, 85, 45, 90, 70, 95, 55].map((h, i) => (
-            <motion.div
-              key={i}
-              className="flex-1 rounded-t-sm"
-              style={{ backgroundColor: color }}
-              initial={{ height: '10%' }}
-              animate={{ height: `${h}%` }}
-              transition={{ duration: 1.2, delay: i * 0.1, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
-            />
-          ))}
-        </div>
-      </div>
-    )
-  }
-  if (type === 1) {
-    // Animated camera scan grid for AI Classification
-    return (
-      <div className="absolute inset-0 opacity-[0.06] pointer-events-none overflow-hidden">
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 200">
-          <defs>
-            <pattern id={`grid-${color.replace('#', '')}`} width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke={color} strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill={`url(#grid-${color.replace('#', '')})`} />
-          <motion.rect
-            x="60" y="60" width="80" height="80"
-            fill="none" stroke={color} strokeWidth="1.5"
-            strokeDasharray="8 4"
-            animate={{ rotate: [0, 90, 180, 270, 360] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-            style={{ originX: '100px', originY: '100px' }}
-          />
-        </svg>
-      </div>
-    )
-  }
-  if (type === 2) {
-    // Neural network nodes for Smart Analytics
-    return (
-      <div className="absolute inset-0 opacity-[0.08] pointer-events-none overflow-hidden">
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 200">
-          {[[40, 80], [40, 120], [100, 60], [100, 100], [100, 140], [160, 80], [160, 120]].map(([cx, cy], i) => (
-            <motion.circle
-              key={i} cx={cx} cy={cy} r="5" fill={color}
-              animate={{ r: [5, 7, 5], opacity: [0.6, 1, 0.6] }}
-              transition={{ duration: 2, delay: i * 0.3, repeat: Infinity }}
-            />
-          ))}
-          {[[0, 1], [0, 2], [1, 3], [2, 3], [2, 4], [3, 5], [3, 6], [4, 5], [4, 6]].map(([a, b], i) => {
-            const nodes = [[40, 80], [40, 120], [100, 60], [100, 100], [100, 140], [160, 80], [160, 120]]
-            return (
-              <motion.line key={i} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]}
-                stroke={color} strokeWidth="0.8"
-                animate={{ opacity: [0.3, 0.8, 0.3] }}
-                transition={{ duration: 2, delay: i * 0.2, repeat: Infinity }}
-              />
-            )
-          })}
-        </svg>
-      </div>
-    )
-  }
-  if (type === 3) {
-    // Sound wave for Voice
-    return (
-      <div className="absolute bottom-0 right-0 w-40 h-24 opacity-10 pointer-events-none overflow-hidden">
-        <div className="flex items-center gap-[3px] h-full px-4">
-          {[20, 45, 70, 95, 60, 80, 40, 90, 55, 75, 35, 65].map((h, i) => (
-            <motion.div
-              key={i}
-              className="w-[3px] flex-shrink-0 rounded-full"
-              style={{ backgroundColor: color }}
-              animate={{ height: [`${h * 0.3}%`, `${h}%`, `${h * 0.3}%`] }}
-              transition={{ duration: 0.8, delay: i * 0.07, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          ))}
-        </div>
-      </div>
-    )
-  }
-  if (type === 4) {
-    // Notification bell rings for Alerts
-    return (
-      <div className="absolute top-4 right-4 opacity-[0.08] pointer-events-none">
-        {[0, 1, 2].map(i => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full border-2"
-            style={{ borderColor: color, width: 40 + i * 28, height: 40 + i * 28, top: -(i * 14), left: -(i * 14) }}
-            animate={{ scale: [1, 1.3, 1], opacity: [0.8, 0, 0.8] }}
-            transition={{ duration: 2, delay: i * 0.4, repeat: Infinity }}
-          />
-        ))}
-      </div>
-    )
-  }
-  // Shield hexagon pattern for Security
-  return (
-    <div className="absolute inset-0 opacity-[0.05] pointer-events-none overflow-hidden">
-      <svg className="absolute right-0 bottom-0 w-40 h-40" viewBox="0 0 100 100">
-        <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" fill="none" stroke={color} strokeWidth="1.5" />
-        <polygon points="50,18 82,34 82,66 50,82 18,66 18,34" fill="none" stroke={color} strokeWidth="1" />
-        <polygon points="50,32 70,42 70,58 50,68 30,58 30,42" fill={color} fillOpacity="0.3" stroke="none" />
-      </svg>
-    </div>
-  )
+const FEATURE_EXTRAS: Record<number, string[]> = {
+  0: ['5 sub-bins', 'Live stream', 'Fill alerts'],
+  1: ['99.2% accuracy', '5 categories', 'Real-time'],
+  2: ['Collection trends', 'Efficiency score', 'Impact metrics'],
+  3: ['Hands-free', 'Multi-language', 'Always-on'],
+  4: ['Battery detected', 'Gas sensors', 'Moisture alerts'],
+  5: ['Firebase Auth', 'Encrypted data', '99.9% uptime'],
 }
 
+const ROTATION_MS = 3200
+
 export default function Features() {
+  const [active, setActive] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const isInView = useInView(sectionRef, { once: false, margin: '-150px' })
+
+  // Auto-rotation — stops when paused or section not in view
+  const startRotation = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = setInterval(() => {
+      setActive(prev => (prev + 1) % FEATURES.length)
+    }, ROTATION_MS)
+  }, [])
+
+  const stopRotation = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = null
+  }, [])
+
+  useEffect(() => {
+    if (!paused && isInView) {
+      startRotation()
+    } else {
+      stopRotation()
+    }
+    return stopRotation
+  }, [paused, isInView, startRotation, stopRotation])
+
   return (
-    <section id="features" className="py-28 md:py-40 relative overflow-hidden">
-      {/* Ambient orbs */}
+    <section id="features" className="py-14 md:py-20 relative overflow-hidden" ref={sectionRef}>
+      {/* Ambient orbs — gated by isInView */}
       <div className="absolute inset-0 pointer-events-none">
-        <motion.div
-          className="absolute top-[-100px] left-1/4 w-[700px] h-[700px] rounded-full blur-3xl opacity-[0.07]"
-          style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.1, 1], x: [0, 30, 0] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute bottom-[-100px] right-1/4 w-[600px] h-[600px] rounded-full blur-3xl opacity-[0.07]"
-          style={{ background: 'radial-gradient(circle, #14B8A6 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.15, 1], x: [0, -20, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-        />
-        {/* Dot grid */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.035]" xmlns="http://www.w3.org/2000/svg">
+        {isInView && (
+          <>
+            <motion.div
+              className="absolute top-[-80px] left-1/4 w-[600px] h-[600px] rounded-full blur-3xl opacity-[0.06]"
+              style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }}
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              className="absolute bottom-[-80px] right-1/4 w-[500px] h-[500px] rounded-full blur-3xl opacity-[0.06]"
+              style={{ background: 'radial-gradient(circle, #22c55e 0%, transparent 70%)' }}
+              animate={{ scale: [1, 1.12, 1] }}
+              transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+            />
+          </>
+        )}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.028]" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <pattern id="featureDots2" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+            <pattern id="featureDots" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
               <circle cx="1" cy="1" r="1.2" fill="currentColor" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#featureDots2)" className="text-white" />
+          <rect width="100%" height="100%" fill="url(#featureDots)" className="text-white" />
         </svg>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-14"
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10"
         >
           <div className="max-w-2xl">
             <span className="section-label">Features</span>
@@ -165,60 +93,98 @@ export default function Features() {
               {' '}intelligently.
             </h2>
           </div>
-          <p className="text-neutral-400 text-base leading-relaxed max-w-xs">
-            Six powerful capabilities working together — from AI to alerts.
+          <p className="text-neutral-300 text-base leading-relaxed max-w-xs">
+            Six powerful capabilities working in harmony — from AI to real-time alerts.
           </p>
         </motion.div>
 
-        {/* Bento Grid — Row 1: Analytics (tall) + AI + Smart Analytics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Card 0: Analytics — tall left col */}
-          <motion.div
-            className="lg:row-span-2 min-h-[280px] lg:min-h-[520px]"
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0 }}
-          >
-            <BentoCard feature={FEATURES[0]} index={0} tall />
-          </motion.div>
+        {/* Desktop: Interactive Feature Explorer */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="hidden lg:flex rounded-3xl overflow-hidden border border-neutral-800/60 min-h-[540px]"
+          style={{ backgroundColor: 'rgba(14, 14, 16, 0.8)' }}
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          {/* Left: Feature List */}
+          <div className="w-[320px] flex-shrink-0 border-r border-neutral-800/60 flex flex-col">
+            {FEATURES.map((feature, i) => (
+              <FeatureListItem
+                key={i}
+                feature={feature}
+                index={i}
+                isActive={active === i}
+                onSelect={() => setActive(i)}
+                isLast={i === FEATURES.length - 1}
+              />
+            ))}
 
-          {/* Cards 1 & 2: normal top-right */}
-          {[1, 2].map((fi, i) => (
+            {/* Dot progress indicator */}
+            <div className="flex items-center gap-2 px-6 py-4 border-t border-neutral-800/50 mt-auto">
+              {FEATURES.map((f, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  className="transition-all duration-300"
+                  style={{
+                    width: active === i ? '16px' : '6px',
+                    height: '6px',
+                    borderRadius: '3px',
+                    backgroundColor: active === i ? f.color : 'rgba(255,255,255,0.12)',
+                  }}
+                />
+              ))}
+              <span className="ml-auto text-[9px] font-mono text-neutral-700 uppercase tracking-widest">
+                {paused ? 'PAUSED' : 'AUTO'}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Feature Detail Panel */}
+          <div className="flex-1 relative overflow-hidden">
+            {/* Linear timer bar — resets on each new active, hidden when paused */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] z-20 overflow-hidden">
+              {!paused && (
+                <motion.div
+                  key={`timer-${active}`}
+                  className="h-full origin-left"
+                  style={{ backgroundColor: FEATURES[active].color }}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: ROTATION_MS / 1000, ease: 'linear' }}
+                />
+              )}
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={active}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute inset-0"
+              >
+                <FeaturePanel feature={FEATURES[active]} index={active} />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Mobile: Card Grid */}
+        <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {FEATURES.map((feature, i) => (
             <motion.div
-              key={fi}
-              className="min-h-[250px]"
-              initial={{ opacity: 0, y: 50 }}
+              key={i}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: (i + 1) * 0.09 }}
+              transition={{ duration: 0.5, delay: i * 0.07 }}
             >
-              <BentoCard feature={FEATURES[fi]} index={fi} />
-            </motion.div>
-          ))}
-
-          {/* Card 3: Voice — wide, spans 2 cols on lg, natural height */}
-          <motion.div
-            className="md:col-span-2 lg:col-span-2 min-h-[280px]"
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.36 }}
-          >
-            <BentoCard feature={FEATURES[3]} index={3} wide />
-          </motion.div>
-
-          {/* Cards 4 & 5: normal bottom */}
-          {[4, 5].map((fi, i) => (
-            <motion.div
-              key={fi}
-              className="min-h-[250px]"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: (i + 4) * 0.09 }}
-            >
-              <BentoCard feature={FEATURES[fi]} index={fi} />
+              <MobileFeatureCard feature={feature} index={i} />
             </motion.div>
           ))}
         </div>
@@ -227,231 +193,230 @@ export default function Features() {
   )
 }
 
-function BentoCard({
+function FeatureListItem({
   feature,
   index,
-  tall = false,
-  wide = false,
+  isActive,
+  onSelect,
+  isLast,
 }: {
   feature: typeof FEATURES[number]
   index: number
-  tall?: boolean
-  wide?: boolean
+  isActive: boolean
+  onSelect: () => void
+  isLast: boolean
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [isHovered, setIsHovered] = useState(false)
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={onSelect}
+      className={`relative flex items-center gap-4 px-6 py-5 w-full text-left ${!isLast ? 'border-b border-neutral-800/50' : ''}`}
+      style={{ minHeight: '72px' }}
+    >
+      {/* Active left accent */}
+      <motion.div
+        className="absolute left-0 top-3 bottom-3 w-[2.5px] rounded-r-full"
+        style={{ backgroundColor: feature.color }}
+        animate={{ scaleY: isActive ? 1 : 0, opacity: isActive ? 1 : 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+      />
 
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]), { stiffness: 300, damping: 30 })
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-6, 6]), { stiffness: 300, damping: 30 })
-  // Spotlight: track mouse position for per-card radial highlight
-  const spotX = useMotionValue(50)
-  const spotY = useMotionValue(50)
+      {/* Background wash */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        animate={{ opacity: isActive ? 1 : 0 }}
+        style={{ background: `linear-gradient(90deg, ${feature.color}0a 0%, transparent 75%)` }}
+        transition={{ duration: 0.28 }}
+      />
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return
-    const rect = ref.current.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / rect.width
-    const y = (e.clientY - rect.top) / rect.height
-    mouseX.set(x - 0.5)
-    mouseY.set(y - 0.5)
-    spotX.set(x * 100)
-    spotY.set(y * 100)
-  }
+      {/* Number */}
+      <span
+        className="text-[11px] font-mono font-bold w-5 shrink-0 transition-colors duration-200"
+        style={{ color: isActive ? feature.color : '#3a3a3a' }}
+      >
+        {String(index + 1).padStart(2, '0')}
+      </span>
 
-  const handleMouseLeave = () => {
-    mouseX.set(0)
-    mouseY.set(0)
-    spotX.set(50)
-    spotY.set(50)
-    setIsHovered(false)
-  }
+      {/* Icon */}
+      <div
+        className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-all duration-200"
+        style={{
+          backgroundColor: isActive ? `${feature.color}18` : 'transparent',
+          border: `1px solid ${isActive ? feature.color + '30' : 'transparent'}`,
+        }}
+      >
+        <feature.icon
+          className="w-3.5 h-3.5 transition-colors duration-200"
+          style={{ color: isActive ? feature.color : '#4a4a4a' }}
+        />
+      </div>
+
+      {/* Title */}
+      <span
+        className="text-sm font-display font-semibold flex-1 leading-tight transition-colors duration-200"
+        style={{ color: isActive ? '#f5f5f5' : '#737373' }}
+      >
+        {feature.title}
+      </span>
+
+      {/* Arrow */}
+      <motion.div
+        animate={{ x: isActive ? 0 : -6, opacity: isActive ? 1 : 0 }}
+        transition={{ duration: 0.2 }}
+        className="shrink-0"
+      >
+        <ArrowRight className="w-3.5 h-3.5" style={{ color: feature.color }} />
+      </motion.div>
+    </button>
+  )
+}
+
+function FeaturePanel({ feature, index }: { feature: typeof FEATURES[number]; index: number }) {
+  const extras = FEATURE_EXTRAS[index] ?? []
 
   return (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
-      style={{ perspective: '1200px', height: '100%' }}
-    >
-      <motion.div
-        style={{ rotateX, rotateY, transformStyle: 'preserve-3d', height: '100%' }}
-        className="relative rounded-2xl overflow-hidden group cursor-pointer h-full"
+    <div className="relative h-full flex flex-col p-10 xl:p-14 overflow-hidden">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 55% 45% at 85% 25%, ${feature.color}0d 0%, transparent 65%)`,
+        }}
+      />
+
+      {/* Large ghosted number */}
+      <div
+        className="absolute right-8 top-6 font-display font-black leading-none select-none pointer-events-none"
+        style={{ fontSize: 'clamp(80px, 12vw, 160px)', color: feature.color, opacity: 0.04 }}
       >
-        {/* Base layer */}
-        <div
-          className="absolute inset-0 rounded-2xl transition-all duration-500"
+        {String(index + 1).padStart(2, '0')}
+      </div>
+
+      {/* Tag */}
+      <div className="relative z-10">
+        <span
+          className="inline-flex px-3 py-1.5 rounded-full text-[11px] font-mono font-bold uppercase tracking-widest"
           style={{
-            background: isHovered
-              ? `linear-gradient(135deg, ${feature.color}10 0%, ${feature.color}05 100%)`
-              : 'var(--bento-bg)',
-            backgroundColor: '#111113',
+            color: feature.color,
+            backgroundColor: `${feature.color}14`,
+            border: `1px solid ${feature.color}28`,
           }}
-        />
+        >
+          {feature.tag}
+        </span>
+      </div>
 
-        {/* Border */}
-        <div
-          className="absolute inset-0 rounded-2xl border transition-all duration-500 pointer-events-none"
-          style={{
-            borderColor: isHovered ? `${feature.color}40` : 'rgba(255,255,255,0.07)',
-          }}
-        />
-
-        {/* Mouse spotlight */}
-        <motion.div
-          className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{
-            background: useTransform(
-              [spotX, spotY],
-              ([x, y]) =>
-                `radial-gradient(circle 180px at ${x}% ${y}%, ${feature.color}18 0%, transparent 70%)`
-            ),
-          }}
-        />
-
-        {/* Unique card background illustration */}
-        <CardBackground color={feature.color} type={index} />
-
-        {/* Top shimmer line */}
-        <div
-          className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-          style={{
-            background: `linear-gradient(90deg, transparent 0%, ${feature.color}80 50%, transparent 100%)`,
-          }}
-        />
-
-        {/* Content */}
-        <div className={`relative z-10 flex flex-col h-full p-7 ${tall ? 'gap-4' : 'gap-3'}`}>
-          {/* Top: tag + number */}
-          <div className="flex items-center justify-between">
-            <span
-              className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest"
-              style={{
-                color: feature.color,
-                backgroundColor: `${feature.color}15`,
-                border: `1px solid ${feature.color}25`,
-              }}
-            >
-              {feature.tag}
-            </span>
-            <span
-              className="text-xs font-mono font-bold opacity-20 select-none"
-              style={{ color: feature.color }}
-            >
-              {String(index + 1).padStart(2, '0')}
-            </span>
-          </div>
-
-          {/* Icon */}
-          <motion.div
-            animate={{ scale: isHovered ? 1.1 : 1 }}
-            transition={{ type: 'spring', stiffness: 350, damping: 22 }}
-            className="relative self-start"
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col justify-center flex-1 mt-6">
+        {/* Icon orb */}
+        <div className="relative self-start mb-6">
+          <div
+            className="absolute inset-0 rounded-2xl blur-2xl"
+            style={{ backgroundColor: feature.color, opacity: 0.22, transform: 'scale(1.6)' }}
+          />
+          <div
+            className="relative w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{
+              background: `linear-gradient(135deg, ${feature.color}30 0%, ${feature.color}0e 100%)`,
+              border: `1.5px solid ${feature.color}38`,
+            }}
           >
-            {/* Glow bloom */}
-            <div
-              className="absolute inset-0 rounded-xl blur-lg transition-all duration-500"
-              style={{
-                backgroundColor: feature.color,
-                opacity: isHovered ? 0.5 : 0.15,
-                transform: 'scale(1.6)',
-              }}
-            />
-            <div
-              className="relative w-14 h-14 rounded-xl flex items-center justify-center"
-              style={{
-                background: `linear-gradient(135deg, ${feature.color}30 0%, ${feature.color}10 100%)`,
-                border: `1.5px solid ${feature.color}35`,
-                boxShadow: isHovered ? `0 8px 32px -4px ${feature.color}40` : 'none',
-              }}
-            >
-              <feature.icon className="w-6 h-6" style={{ color: feature.color }} />
-            </div>
-          </motion.div>
-
-          {/* Title + description */}
-          <div className="mt-auto">
-            <h3
-              className={`font-display font-bold text-white mb-2 ${tall ? 'text-2xl' : 'text-xl'}`}
-            >
-              {feature.title}
-            </h3>
-            <p
-              className={`text-neutral-400 leading-relaxed ${tall ? 'text-base' : 'text-sm'}`}
-            >
-              {feature.description}
-            </p>
+            <feature.icon className="w-8 h-8" style={{ color: feature.color }} />
           </div>
-
-          {/* Bottom: animated progress bar on tall cards */}
-          {tall && (
-            <div className="mt-2">
-              <div className="flex justify-between text-[10px] font-mono text-neutral-400 mb-1">
-                <span>Accuracy</span>
-                <span style={{ color: feature.color }}>99.2%</span>
-              </div>
-              <div className="h-1.5 rounded-full bg-neutral-800 overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full"
-                  style={{ backgroundColor: feature.color }}
-                  initial={{ width: '0%' }}
-                  whileInView={{ width: '99.2%' }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Wide card extra: stat pills */}
-          {wide && (
-            <div className="flex flex-wrap gap-2 mt-1">
-              {['Hands-free', 'Multi-language', 'Always-on'].map((label) => (
-                <span
-                  key={label}
-                  className="px-3 py-1 rounded-full text-[11px] font-medium"
-                  style={{
-                    backgroundColor: `${feature.color}12`,
-                    color: feature.color,
-                    border: `1px solid ${feature.color}20`,
-                  }}
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Bottom border accent */}
-        <motion.div
-          className="absolute bottom-0 left-4 right-4 h-[2px] rounded-full"
-          style={{ backgroundColor: feature.color }}
-          initial={{ scaleX: 0, originX: 0 }}
-          animate={{ scaleX: isHovered ? 1 : 0 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-        />
+        <h3
+          className="text-display-md font-display font-extrabold text-white leading-tight"
+          style={{ letterSpacing: '-0.025em' }}
+        >
+          {feature.title}
+        </h3>
 
-        {/* Scan-line sweep */}
-        <AnimatePresence>
-          {isHovered && (
-            <motion.div
-              key="scanline"
-              className="absolute left-0 right-0 h-[1.5px] pointer-events-none"
-              style={{
-                background: `linear-gradient(90deg, transparent, ${feature.color}90, transparent)`,
-                zIndex: 20,
-              }}
-              initial={{ top: '0%', opacity: 0 }}
-              animate={{ top: ['0%', '100%'], opacity: [0, 1, 0] }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.7, ease: 'easeInOut' }}
-            />
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </motion.div>
+        <p className="text-neutral-300 text-lg leading-relaxed mt-4 max-w-md">
+          {feature.description}
+        </p>
+
+        {extras.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-8">
+            {extras.map((label, i) => (
+              <motion.span
+                key={label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.07, duration: 0.3 }}
+                className="px-3.5 py-1.5 rounded-full text-[12px] font-mono font-medium"
+                style={{
+                  color: feature.color,
+                  backgroundColor: `${feature.color}10`,
+                  border: `1px solid ${feature.color}22`,
+                }}
+              >
+                {label}
+              </motion.span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div
+        className="relative z-10 h-px mt-8 rounded-full"
+        style={{
+          background: `linear-gradient(90deg, ${feature.color}55 0%, ${feature.color}12 55%, transparent 100%)`,
+        }}
+      />
+    </div>
+  )
+}
+
+function MobileFeatureCard({ feature, index }: { feature: typeof FEATURES[number]; index: number }) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <SpotlightCard spotlightColor="rgba(99,102,241,0.15)" className="rounded-2xl">
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="relative rounded-2xl p-6 overflow-hidden transition-all duration-300"
+      style={{
+        backgroundColor: hovered ? `${feature.color}07` : '#0f0f11',
+        border: `1px solid ${hovered ? feature.color + '28' : 'rgba(255,255,255,0.06)'}`,
+      }}
+    >
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(circle at 70% 20%, ${feature.color}09 0%, transparent 60%)`,
+          opacity: hovered ? 1 : 0.5,
+        }}
+      />
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <span
+            className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest"
+            style={{
+              color: feature.color,
+              backgroundColor: `${feature.color}14`,
+              border: `1px solid ${feature.color}25`,
+            }}
+          >
+            {feature.tag}
+          </span>
+          <span className="text-[10px] font-mono font-bold opacity-20" style={{ color: feature.color }}>
+            {String(index + 1).padStart(2, '0')}
+          </span>
+        </div>
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-all duration-300"
+          style={{
+            background: `linear-gradient(135deg, ${feature.color}25 0%, ${feature.color}08 100%)`,
+            border: `1.5px solid ${feature.color}30`,
+          }}
+        >
+          <feature.icon className="w-5 h-5" style={{ color: feature.color }} />
+        </div>
+        <h3 className="text-base font-display font-bold text-white mb-2">{feature.title}</h3>
+        <p className="text-neutral-500 text-sm leading-relaxed">{feature.description}</p>
+      </div>
+    </div>
+    </SpotlightCard>
   )
 }

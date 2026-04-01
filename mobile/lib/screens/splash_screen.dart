@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'auth_wrapper.dart';
 import '../utils/app_colors.dart';
 
@@ -45,8 +44,8 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const AuthWrapper(),
-            transitionsBuilder: (_, animation, __, child) {
+            pageBuilder: (_, _, _) => const AuthWrapper(),
+            transitionsBuilder: (_, animation, _, child) {
               return FadeTransition(opacity: animation, child: child);
             },
             transitionDuration: const Duration(milliseconds: 800),
@@ -67,7 +66,6 @@ class _SplashScreenState extends State<SplashScreen>
     // Force light status bar for contrast if needed, or adapt to theme
     // SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = AppColors.background(context);
     final accent = AppColors.accent(context);
 
@@ -89,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen>
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: accent.withOpacity(0.4),
+                        color: accent.withValues(alpha: 0.4),
                         blurRadius: 30,
                         offset: const Offset(0, 15),
                       ),

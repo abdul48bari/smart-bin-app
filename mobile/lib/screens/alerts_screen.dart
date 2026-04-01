@@ -130,7 +130,7 @@ class _SectionHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
+            color: color.withValues(alpha:0.12),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
@@ -166,7 +166,7 @@ class _EmptyAlertsState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha:0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -404,14 +404,14 @@ class _AlertCardState extends State<_AlertCard> {
         decoration: BoxDecoration(
           color: isResolved
               ? (isDark
-                  ? Colors.green.withOpacity(0.08)
-                  : Colors.green.withOpacity(0.06))
+                  ? Colors.green.withValues(alpha:0.08)
+                  : Colors.green.withValues(alpha:0.06))
               : AppColors.surface(context),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isResolved
-                ? Colors.green.withOpacity(0.2)
-                : alertColor.withOpacity(isDark ? 0.35 : 0.18),
+                ? Colors.green.withValues(alpha:0.2)
+                : alertColor.withValues(alpha:isDark ? 0.35 : 0.18),
             width: 1.5,
           ),
           boxShadow: AppShadows.elevation(context, 'medium'),
@@ -431,8 +431,8 @@ class _AlertCardState extends State<_AlertCard> {
                     height: 42,
                     decoration: BoxDecoration(
                       color: isResolved
-                          ? Colors.green.withOpacity(0.12)
-                          : alertColor.withOpacity(0.12),
+                          ? Colors.green.withValues(alpha:0.12)
+                          : alertColor.withValues(alpha:0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -467,8 +467,8 @@ class _AlertCardState extends State<_AlertCard> {
                                   horizontal: 7, vertical: 2),
                               decoration: BoxDecoration(
                                 color: isResolved
-                                    ? Colors.green.withOpacity(0.12)
-                                    : severityColor.withOpacity(0.12),
+                                    ? Colors.green.withValues(alpha:0.12)
+                                    : severityColor.withValues(alpha:0.12),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
@@ -491,7 +491,7 @@ class _AlertCardState extends State<_AlertCard> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.15),
+                                  color: Colors.red.withValues(alpha:0.15),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: const Text(
@@ -544,7 +544,7 @@ class _AlertCardState extends State<_AlertCard> {
                                 borderRadius: BorderRadius.circular(999),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.green.withOpacity(0.25),
+                                    color: Colors.green.withValues(alpha:0.25),
                                     blurRadius: 6,
                                     offset: const Offset(0, 2),
                                   ),
@@ -644,7 +644,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha:0.08),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

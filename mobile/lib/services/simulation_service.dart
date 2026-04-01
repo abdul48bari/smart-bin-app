@@ -102,8 +102,6 @@ class SimulationService {
         .toList();
     if (onlineBins.isEmpty) return;
 
-    final bin = onlineBins[_random.nextInt(onlineBins.length)];
-    final binId = bin['id'] as String;
     final alertIndex = _random.nextInt(3); // 0=battery, 1=gas, 2=moisture
 
     AlertModel alert;

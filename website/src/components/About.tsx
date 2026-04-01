@@ -5,6 +5,7 @@ import { motion, useInView } from 'framer-motion'
 import { Recycle, Target, Leaf, TrendingDown } from 'lucide-react'
 import ScrollReveal from './ScrollReveal'
 import { IMPACT_STATS } from '@/lib/constants'
+import BlurText from './BlurText'
 
 function AnimatedCounter({ value, suffix = '', prefix = '', decimals = 0 }: { value: number; suffix?: string; prefix?: string; decimals?: number }) {
   const [count, setCount] = useState(0)
@@ -38,7 +39,7 @@ function AnimatedCounter({ value, suffix = '', prefix = '', decimals = 0 }: { va
 
 export default function About() {
   return (
-    <section id="about" className="py-28 md:py-40 relative">
+    <section id="about" className="py-14 md:py-20 relative">
       <div className="max-w-7xl mx-auto px-6">
         {/* Problem section header */}
         <ScrollReveal>
@@ -53,14 +54,14 @@ export default function About() {
         </ScrollReveal>
 
         {/* Bento grid stats */}
-        <div className="grid md:grid-cols-3 gap-4 mt-16">
+        <div className="grid md:grid-cols-3 gap-4 mt-10">
           {IMPACT_STATS.map((stat, i) => (
             <ScrollReveal key={i} delay={i * 0.1}>
               <div className="bento-card p-8 md:p-10 group">
                 <div className="text-5xl md:text-6xl font-display font-extrabold text-white counter-glow">
                   <AnimatedCounter value={stat.value} suffix={stat.suffix} prefix={stat.prefix} decimals={stat.value % 1 !== 0 ? 2 : 0} />
                 </div>
-                <p className="text-neutral-400 mt-3 text-sm">{stat.label}</p>
+                <p className="text-neutral-300 mt-3 text-base">{stat.label}</p>
                 <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <TrendingDown className="w-4 h-4 text-red-500" />
                 </div>
@@ -70,19 +71,20 @@ export default function About() {
         </div>
 
         {/* Solution section */}
-        <div className="grid lg:grid-cols-2 gap-20 items-center mt-32">
+        <div className="grid lg:grid-cols-2 gap-12 items-center mt-14">
           <ScrollReveal>
             <div>
               <span className="section-label">The Solution</span>
               <h3 className="text-display-md font-display font-extrabold mt-4">
                 Meet Reclevo
               </h3>
-              <p className="text-lg text-neutral-400 leading-relaxed mt-6">
-                An AI-powered smart garbage bin that takes the guesswork out of recycling.
-                Just throw your trash in — our camera and machine learning system identifies the waste type
-                and automatically sorts it into the correct compartment.
-              </p>
-              <p className="text-lg text-neutral-400 leading-relaxed mt-4">
+              <BlurText
+                text="An AI-powered smart garbage bin that takes the guesswork out of recycling. Just throw your trash in — our camera and machine learning system identifies the waste type and automatically sorts it into the correct compartment."
+                delay={100}
+                direction="bottom"
+                className="text-lg text-neutral-300 leading-relaxed mt-6"
+              />
+              <p className="text-lg text-neutral-300 leading-relaxed mt-4">
                 Combined with a real-time monitoring app, waste collectors know exactly which bins need
                 attention, reducing unnecessary trips and maximizing efficiency.
               </p>
@@ -92,7 +94,7 @@ export default function About() {
           <ScrollReveal direction="right">
             <div className="space-y-3">
               {[
-                { icon: Recycle, title: 'Automatic Sorting', desc: '5 waste categories sorted without human intervention', color: '#14b8a6' },
+                { icon: Recycle, title: 'Automatic Sorting', desc: '5 waste categories sorted without human intervention', color: '#22c55e' },
                 { icon: Target, title: '99% Accuracy', desc: 'AI-powered classification with near-perfect precision', color: '#6366f1' },
                 { icon: Leaf, title: 'Eco Impact', desc: 'Reduce contamination and increase recycling rates', color: '#10b981' },
               ].map((item, i) => (
@@ -110,7 +112,7 @@ export default function About() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-white">{item.title}</h4>
-                    <p className="text-sm text-neutral-400 mt-0.5">{item.desc}</p>
+                    <p className="text-sm text-neutral-300 mt-0.5">{item.desc}</p>
                   </div>
                 </motion.div>
               ))}

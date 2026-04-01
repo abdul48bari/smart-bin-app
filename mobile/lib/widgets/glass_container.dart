@@ -57,7 +57,7 @@ class GlassContainer extends StatelessWidget {
             padding: padding,
             decoration: BoxDecoration(
               color: (color ?? (isDark ? Colors.black : Colors.white))
-                  .withOpacity(opacity),
+                  .withValues(alpha:opacity),
               shape: shape,
               borderRadius: shape == BoxShape.circle
                   ? null
@@ -65,8 +65,8 @@ class GlassContainer extends StatelessWidget {
               border: border ??
                   Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.14)
-                        : Colors.black.withOpacity(0.10),
+                        ? Colors.white.withValues(alpha:0.14)
+                        : Colors.black.withValues(alpha:0.10),
                     width: 1.5,
                   ),
             ),

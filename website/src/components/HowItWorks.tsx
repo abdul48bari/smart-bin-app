@@ -57,7 +57,7 @@ export default function HowItWorks() {
   }, [])
 
   return (
-    <section id="how-it-works" className="py-28 md:py-40 relative overflow-hidden">
+    <section id="how-it-works" className="py-14 md:py-20 relative overflow-hidden">
       {/* Ambient bg */}
       <div className="absolute inset-0 pointer-events-none">
         <div
@@ -85,7 +85,7 @@ export default function HowItWorks() {
             <br />
             <span className="gradient-text">in seconds.</span>
           </h2>
-          <p className="mt-5 text-neutral-500 dark:text-neutral-400 text-lg max-w-xl leading-relaxed">
+          <p className="mt-5 text-neutral-400 dark:text-neutral-300 text-lg max-w-xl leading-relaxed">
             Our five-step intelligent pipeline handles everything automatically — just toss your waste and walk away.
           </p>
         </motion.div>
@@ -105,7 +105,7 @@ export default function HowItWorks() {
               style={{
                 height: '100%',
                 transformOrigin: 'top center',
-                background: 'linear-gradient(180deg, #6366f1 0%, #8B5CF6 30%, #14B8A6 65%, #10B981 100%)',
+                background: 'linear-gradient(180deg, #6366f1 0%, #8B5CF6 30%, #22c55e 65%, #10B981 100%)',
               }}
             />
           </div>

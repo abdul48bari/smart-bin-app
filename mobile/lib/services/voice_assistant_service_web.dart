@@ -115,7 +115,7 @@ class VoiceAssistantService {
       String bestTranscript = '';
       for (int i = 0; i < _recognition!.maxAlternatives!; i++) {
         final alt = result.item(i);
-        if (alt != null && (alt.transcript ?? '').isNotEmpty) {
+        if ((alt.transcript ?? '').isNotEmpty) {
           bestTranscript = alt.transcript!;
           break;
         }
@@ -810,7 +810,7 @@ class VoiceAssistantService {
 
     try {
       final data = await _firestoreService.getAllBinsPieceCount(filter).first;
-      final total = data.values.fold(0, (sum, v) => sum + v);
+      final total = data.values.fold(0, (acc, v) => acc + v);
 
       final timeLabel = filter == TimeFilter.day
           ? 'today'

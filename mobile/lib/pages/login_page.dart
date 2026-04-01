@@ -127,7 +127,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: accent.withOpacity(isDark ? 0.25 : 0.15),
+                              color: accent.withValues(alpha:isDark ? 0.25 : 0.15),
                               blurRadius: 18,
                               spreadRadius: 2,
                             ),
@@ -175,13 +175,13 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: isDark
-                                ? Colors.white.withOpacity(0.10)
-                                : Colors.black.withOpacity(0.08),
+                                ? Colors.white.withValues(alpha:0.10)
+                                : Colors.black.withValues(alpha:0.08),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+                              color: Colors.black.withValues(alpha:isDark ? 0.3 : 0.06),
                               blurRadius: 20,
                               offset: const Offset(0, 6),
                             ),
@@ -210,8 +210,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                   prefixIcon: Icon(Icons.email_rounded, color: accent),
                                   filled: true,
                                   fillColor: isDark
-                                      ? Colors.white.withOpacity(0.05)
-                                      : accentSoft.withOpacity(0.3),
+                                      ? Colors.white.withValues(alpha:0.05)
+                                      : accentSoft.withValues(alpha:0.3),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     borderSide: BorderSide.none,
@@ -275,8 +275,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                   ),
                                   filled: true,
                                   fillColor: isDark
-                                      ? Colors.white.withOpacity(0.05)
-                                      : accentSoft.withOpacity(0.3),
+                                      ? Colors.white.withValues(alpha:0.05)
+                                      : accentSoft.withValues(alpha:0.3),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     borderSide: BorderSide.none,
@@ -318,7 +318,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: accent.withOpacity(isDark ? 0.3 : 0.2),
+                                      color: accent.withValues(alpha:isDark ? 0.3 : 0.2),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -333,7 +333,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    disabledBackgroundColor: accent.withOpacity(0.5),
+                                    disabledBackgroundColor: accent.withValues(alpha:0.5),
                                   ),
                                   child: _isLoading
                                       ? const SizedBox(
@@ -366,7 +366,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                         children: [
                           Expanded(
                             child: Divider(
-                              color: AppColors.textSecondary(context).withOpacity(0.2),
+                              color: AppColors.textSecondary(context).withValues(alpha:0.2),
                               thickness: 1,
                             ),
                           ),
@@ -377,13 +377,13 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary(context).withOpacity(0.5),
+                                color: AppColors.textSecondary(context).withValues(alpha:0.5),
                               ),
                             ),
                           ),
                           Expanded(
                             child: Divider(
-                              color: AppColors.textSecondary(context).withOpacity(0.2),
+                              color: AppColors.textSecondary(context).withValues(alpha:0.2),
                               thickness: 1,
                             ),
                           ),
@@ -411,7 +411,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           ),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 52),
-                            side: BorderSide(color: accent.withOpacity(0.5), width: 1.5),
+                            side: BorderSide(color: accent.withValues(alpha:0.5), width: 1.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -427,7 +427,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary(context).withOpacity(0.6),
+                          color: AppColors.textSecondary(context).withValues(alpha:0.6),
                         ),
                       ),
                     ],

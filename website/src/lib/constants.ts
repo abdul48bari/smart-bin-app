@@ -27,7 +27,7 @@ export const HOW_IT_WORKS_STEPS = [
     icon: Trash2,
     title: 'Throw Trash',
     description: 'Simply dispose your waste into the Reclevo bin — no sorting needed on your end.',
-    color: '#14B8A6',
+    color: '#22c55e',
     number: '01',
   },
   {
@@ -65,7 +65,7 @@ export const FEATURES = [
     icon: BarChart3,
     title: 'Real-Time Monitoring',
     description: 'Track fill levels of every sub-bin live. Know exactly when bins need emptying.',
-    color: '#14B8A6',
+    color: '#22c55e',
     tag: 'Analytics',
   },
   {
@@ -131,26 +131,18 @@ export const TECH_STACK = [
     category: 'Mobile App',
     icon: Smartphone,
     items: ['Flutter', 'Cross-Platform', 'Voice Control'],
-    color: '#14B8A6',
+    color: '#22c55e',
     description: 'Beautiful cross-platform app with voice assistant integration',
   },
 ]
 
 export const TEAM = [
   {
-    name: 'Amer',
-    role: 'System Architect',
-    description: 'Designed and reviewed system architecture',
-    initials: 'AM',
-    color: '#6366f1',
-    icon: Blocks,
-  },
-  {
-    name: 'Umar',
-    role: 'Mobile Developer',
-    description: 'Developed mobile application UI and logic',
-    initials: 'UM',
-    color: '#14B8A6',
+    name: 'Abdul Bari',
+    role: 'Mobile & Web Developer',
+    description: 'Developed mobile application UI and logic, and designed and built the Reclevo marketing website',
+    initials: 'AB',
+    color: '#22c55e',
     icon: Smartphone,
   },
   {
@@ -160,6 +152,22 @@ export const TEAM = [
     initials: 'AS',
     color: '#8B5CF6',
     icon: Server,
+  },
+  {
+    name: 'Amer',
+    role: 'System Architect',
+    description: 'Designed and reviewed system architecture',
+    initials: 'AM',
+    color: '#6366f1',
+    icon: Blocks,
+  },
+  {
+    name: 'Danish',
+    role: 'AI/ML Engineer',
+    description: 'Developed the AI model for waste classification and led dataset collection and model training',
+    initials: 'DN',
+    color: '#10B981',
+    icon: Brain,
   },
   {
     name: 'Ishita',
@@ -179,18 +187,10 @@ export const TEAM = [
   },
   {
     name: 'Arham',
-    role: 'AI/ML Engineer',
-    description: 'Developed AI model for waste classification',
+    role: 'Data & AI Engineer',
+    description: 'Co-developed the AI classification model and assisted with model training',
     initials: 'AR',
     color: '#ec4899',
-    icon: Brain,
-  },
-  {
-    name: 'Danish',
-    role: 'Data & AI Engineer',
-    description: 'Collected datasets and co-developed AI classification',
-    initials: 'DN',
-    color: '#10B981',
     icon: Database,
   },
 ]

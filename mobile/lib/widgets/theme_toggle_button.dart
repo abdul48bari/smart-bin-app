@@ -12,7 +12,6 @@ class ThemeToggleButton extends StatefulWidget {
 class _ThemeToggleButtonState extends State<ThemeToggleButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -20,10 +19,6 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOutCubic,
     );
   }
 
@@ -76,7 +71,7 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
                 child: Icon(
                   Icons.star,
                   size: 6,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha:0.8),
                 ),
               ),
               Positioned(
@@ -85,7 +80,7 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
                 child: Icon(
                   Icons.star,
                   size: 4,
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha:0.6),
                 ),
               ),
             ],
@@ -104,7 +99,7 @@ class _ThemeToggleButtonState extends State<ThemeToggleButton>
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha:0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),

@@ -212,7 +212,7 @@ class _HeroHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: accent.withOpacity(isDark ? 0.3 : 0.18),
+                  color: accent.withValues(alpha:isDark ? 0.3 : 0.18),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -345,7 +345,7 @@ class _TotalPiecesCard extends StatelessWidget {
       stream: firestoreService.getAllBinsPieceCount(filter),
       builder: (context, snapshot) {
         final data = snapshot.data ?? {};
-        final total = data.values.fold(0, (sum, count) => sum + count);
+        final total = data.values.fold(0, (acc, n) => acc + n);
 
         return _AnimatedIn(
           delayMs: 100,
@@ -374,7 +374,7 @@ class _TotalPiecesCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: accent.withOpacity(isDark ? 0.3 : 0.18),
+                            color: accent.withValues(alpha:isDark ? 0.3 : 0.18),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -407,7 +407,7 @@ class _TotalPiecesCard extends StatelessWidget {
                               fontWeight: FontWeight.w800,
                               color: AppColors.textSecondary(
                                 context,
-                              ).withOpacity(0.7),
+                              ).withValues(alpha:0.7),
                             ),
                           ),
                         ],
@@ -731,7 +731,7 @@ class _EnvironmentalImpactCard extends StatelessWidget {
       stream: firestoreService.getAllBinsPieceCount(filter),
       builder: (context, snapshot) {
         final data = snapshot.data ?? {};
-        final total = data.values.fold(0, (sum, count) => sum + count);
+        final total = data.values.fold(0, (acc, n) => acc + n);
 
         // Estimate: avg 50g per piece
         final estimatedKg = (total * 0.05).round();
@@ -762,7 +762,7 @@ class _EnvironmentalImpactCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(isDark ? 0.3 : 0.18),
+                        color: const Color(0xFF10B981).withValues(alpha:isDark ? 0.3 : 0.18),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -865,7 +865,6 @@ class _TopPerformersCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<Map<String, int>>(
       stream: firestoreService.getAllBinsPieceCount(filter),
@@ -925,7 +924,7 @@ class _TopPerformersCard extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.08),
+                        color: color.withValues(alpha:0.08),
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Row(

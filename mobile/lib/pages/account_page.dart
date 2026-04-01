@@ -45,7 +45,7 @@ class AccountPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: accent.withOpacity(isDark ? 0.3 : 0.18),
+                              color: accent.withValues(alpha:isDark ? 0.3 : 0.18),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -205,7 +205,7 @@ class AccountPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary(context).withOpacity(0.6),
+                      color: AppColors.textSecondary(context).withValues(alpha:0.6),
                       height: 1.5,
                     ),
                   ),
@@ -332,7 +332,7 @@ class _ProfileCard extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: accent.withOpacity(isDark ? 0.3 : 0.18),
+                  color: accent.withValues(alpha:isDark ? 0.3 : 0.18),
                   blurRadius: 12,
                   offset: const Offset(0, 5),
                 ),
@@ -377,7 +377,7 @@ class _ProfileCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha:0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -410,8 +410,6 @@ class _BinManagementSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GlassContainer(
       borderRadius: BorderRadius.circular(20),
       child: Column(
@@ -452,8 +450,6 @@ class _SecuritySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GlassContainer(
       borderRadius: BorderRadius.circular(20),
       child: Column(
@@ -480,7 +476,7 @@ class _SecuritySection extends StatelessWidget {
             trailing: Switch(
               value: false,
               onChanged: (_) => _showComingSoonDialog(context, "2FA"),
-              activeColor: accent,
+              activeThumbColor: accent,
             ),
             onTap: null,
           ),
@@ -520,8 +516,6 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GlassContainer(
       borderRadius: BorderRadius.circular(20),
       child: Column(
@@ -547,7 +541,7 @@ class _SettingsSection extends StatelessWidget {
                       appState.toggleDemoMode(val);
                     }
                   },
-                  activeColor: Colors.purpleAccent,
+                  activeThumbColor: Colors.purpleAccent,
                 ),
                 onTap: null,
               );
@@ -653,7 +647,7 @@ class _SettingsItemState extends State<_SettingsItem> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: widget.accent.withOpacity(0.1),
+                  color: widget.accent.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(widget.icon, color: widget.accent, size: 22),
@@ -686,7 +680,7 @@ class _SettingsItemState extends State<_SettingsItem> {
               widget.trailing ??
                   Icon(
                     Icons.chevron_right_rounded,
-                    color: AppColors.textSecondary(context).withOpacity(0.5),
+                    color: AppColors.textSecondary(context).withValues(alpha:0.5),
                     size: 24,
                   ),
             ],
@@ -714,7 +708,7 @@ class _LogoutButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.redAccent.withOpacity(isDark ? 0.3 : 0.18),
+            color: Colors.redAccent.withValues(alpha:isDark ? 0.3 : 0.18),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -752,7 +746,6 @@ class _LogoutButton extends StatelessWidget {
 
 // DIALOGS (Theme-aware)
 void _showComingSoonDialog(BuildContext context, String feature) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
   final accent = AppColors.accent(context);
 
   showDialog(
@@ -766,7 +759,7 @@ void _showComingSoonDialog(BuildContext context, String feature) {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: accent.withOpacity(0.1),
+              color: accent.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(Icons.info_outline_rounded, color: accent),

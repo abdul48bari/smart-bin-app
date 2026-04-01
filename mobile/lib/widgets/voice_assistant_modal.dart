@@ -217,7 +217,7 @@ class _VoiceAssistantModalState extends State<VoiceAssistantModal>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.textSecondary(context).withOpacity(0.3),
+                color: AppColors.textSecondary(context).withValues(alpha:0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -268,14 +268,14 @@ class _VoiceAssistantModalState extends State<VoiceAssistantModal>
                         gradient: LinearGradient(
                           colors: [
                             accent,
-                            accent.withOpacity(0.7),
+                            accent.withValues(alpha:0.7),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: accent.withOpacity(isDark ? 0.5 : 0.3),
+                            color: accent.withValues(alpha:isDark ? 0.5 : 0.3),
                             blurRadius: _isListening ? 32 : 20,
                             spreadRadius: _isListening ? 6 : 0,
                           ),
@@ -392,15 +392,14 @@ class _LiveCaptionBoxState extends State<_LiveCaptionBox>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.accent.withOpacity(0.1),
+        color: widget.accent.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: widget.accent.withOpacity(0.35),
+          color: widget.accent.withValues(alpha:0.35),
           width: 1.5,
         ),
       ),
@@ -411,7 +410,7 @@ class _LiveCaptionBoxState extends State<_LiveCaptionBox>
             children: [
               AnimatedBuilder(
                 animation: _dotAnimation,
-                builder: (_, __) => Opacity(
+                builder: (_, _) => Opacity(
                   opacity: _dotAnimation.value,
                   child: Icon(Icons.mic, color: widget.accent, size: 16),
                 ),
@@ -463,9 +462,9 @@ class _TranscriptBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: accent.withOpacity(0.1),
+        color: accent.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent.withOpacity(0.3), width: 1),
+        border: Border.all(color: accent.withValues(alpha:0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +519,7 @@ class _ResponseBox extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.06)
+            ? Colors.white.withValues(alpha:0.06)
             : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
       ),
@@ -598,7 +597,7 @@ class _HelpBox extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
+            ? Colors.white.withValues(alpha:0.05)
             : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
       ),

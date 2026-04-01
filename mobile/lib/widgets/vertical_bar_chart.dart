@@ -28,7 +28,7 @@ class VerticalBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = data.values.fold(0, (sum, count) => sum + count);
+    final total = data.values.fold(0, (acc, n) => acc + n);
     
     // If data is empty, use default order
     final sortedEntries = data.isEmpty
@@ -215,7 +215,7 @@ class _VerticalBarState extends State<_VerticalBar>
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: widget.color.withOpacity(0.15),
+            color: widget.color.withValues(alpha:0.15),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -323,7 +323,7 @@ class _CircularIndicatorState extends State<_CircularIndicator>
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: widget.color.withOpacity(0.1),
+                    color: widget.color.withValues(alpha:0.1),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -395,7 +395,7 @@ class _CircularIndicatorState extends State<_CircularIndicator>
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
-              color: AppColors.textSecondary(context).withOpacity(0.6),
+              color: AppColors.textSecondary(context).withValues(alpha:0.6),
             ),
           ),
         ],

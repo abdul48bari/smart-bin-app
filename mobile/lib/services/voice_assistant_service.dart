@@ -618,7 +618,7 @@ class VoiceAssistantService {
   Future<String> _getItemsCollected(TimeFilter filter) async {
     try {
       final data = await _firestoreService.getAllBinsPieceCount(filter).first;
-      final total = data.values.fold(0, (sum, count) => sum + count);
+      final total = data.values.fold(0, (acc, n) => acc + n);
 
       final timeLabel = filter == TimeFilter.day ? 'today' :
                        filter == TimeFilter.week ? 'this week' : 'this month';
@@ -641,7 +641,7 @@ class VoiceAssistantService {
   Future<String> _getStatistics() async {
     try {
       final data = await _firestoreService.getAllBinsPieceCount(TimeFilter.week).first;
-      final total = data.values.fold(0, (sum, count) => sum + count);
+      final total = data.values.fold(0, (acc, n) => acc + n);
 
       if (total == 0) {
         return "No statistics available for this week.";

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../pages/home_page.dart';
 import '../pages/bins_page.dart';
 import '../pages/analytics_page.dart';
@@ -60,7 +59,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+              color: Colors.black.withValues(alpha:isDark ? 0.3 : 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -101,7 +100,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? accent.withOpacity(0.15) : Colors.transparent,
+          color: isSelected ? accent.withValues(alpha:0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -142,13 +141,13 @@ class _MainAppScreenState extends State<MainAppScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
-            colors: [accent, accent.withOpacity(0.8)],
+            colors: [accent, accent.withValues(alpha:0.8)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: accent.withOpacity(isDark ? 0.5 : 0.3),
+              color: accent.withValues(alpha:isDark ? 0.5 : 0.3),
               blurRadius: isDark ? 24 : 20,
               spreadRadius: isDark ? 2 : 0,
               offset: const Offset(0, 8),

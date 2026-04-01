@@ -21,14 +21,12 @@ export default function ThemeToggle() {
     >
       <div className="relative w-5 h-5">
         <Sun
-          className={`w-5 h-5 text-amber-500 absolute inset-0 transition-all duration-500 ${
-            isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-50'
-          }`}
+          className={`w-5 h-5 text-amber-500 absolute inset-0 transition-all duration-500 ${isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-50'
+            }`}
         />
         <Moon
-          className={`w-5 h-5 text-neutral-600 absolute inset-0 transition-all duration-500 ${
-            isDark ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100'
-          }`}
+          className={`w-5 h-5 text-neutral-600 absolute inset-0 transition-all duration-500 ${isDark ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100'
+            }`}
         />
       </div>
     </button>
