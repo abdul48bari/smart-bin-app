@@ -5,10 +5,12 @@ import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'providers/theme_provider.dart';
 import 'providers/app_state_provider.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService.initialize();
   runApp(
     MultiProvider(
       providers: [

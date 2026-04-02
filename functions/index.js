@@ -4,6 +4,67 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
 
+// Rate limiting: max requests per binId per minute (tracked in Firestore)
+const RATE_LIMIT_MAX = 60;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+async function checkRateLimit(binId) {
+  const windowStart = Date.now() - RATE_LIMIT_WINDOW_MS;
+  const ref = db.collection("_rateLimits").doc(binId);
+  const doc = await ref.get();
+
+  if (doc.exists) {
+    const { count, windowStartMs } = doc.data();
+    if (windowStartMs > windowStart) {
+      if (count >= RATE_LIMIT_MAX) return false;
+      await ref.update({ count: admin.firestore.FieldValue.increment(1) });
+      return true;
+    }
+  }
+  // New window
+  await ref.set({ count: 1, windowStartMs: Date.now() });
+  return true;
+}
+
+const VALID_EVENT_TYPES = new Set([
+  "LEVEL_UPDATE",
+  "BIN_FULL",
+  "BIN_EMPTIED",
+  "PIECE_COLLECTED",
+  "HARDWARE_ERROR",
+  "BATTERY_DETECTED",
+  "HARMFUL_GAS",
+  "MOISTURE_DETECTED",
+]);
+
+const VALID_SUB_BINS = new Set(["plastic", "paper", "organic", "cans", "mixed"]);
+
+/**
+ * Send an FCM notification to the bin_alerts topic.
+ * All app installs subscribe to this topic automatically.
+ */
+async function sendAlertNotification(alertType, title, body) {
+  try {
+    await admin.messaging().send({
+      topic: "bin_alerts",
+      notification: { title, body },
+      data: { alertType },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: ["BATTERY_DETECTED", "HARMFUL_GAS", "MOISTURE_DETECTED", "HARDWARE_ERROR"].includes(alertType)
+            ? "safety_alerts"
+            : "bin_alerts",
+          priority: "max",
+          defaultVibrateTimings: true,
+        },
+      },
+    });
+  } catch (err) {
+    console.error("FCM send error:", err);
+  }
+}
+
 /**
  * POST /ingestBinEvent
  * Handles all hardware events from the Smart Bin Raspberry Pi
@@ -17,9 +78,32 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
     const { binId, subBin, eventType, fillLevel, errorCode, gasType, gasLevel, moistureLevel } = req.body;
 
     if (!binId || !eventType) {
-      return res.status(400).json({
-        error: "Missing required fields: binId or eventType",
-      });
+      return res.status(400).json({ error: "Missing required fields: binId or eventType" });
+    }
+
+    // Validate binId format (alphanumeric + underscores/hyphens, max 64 chars)
+    if (typeof binId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(binId)) {
+      return res.status(400).json({ error: "Invalid binId format" });
+    }
+
+    // Validate eventType against whitelist
+    if (typeof eventType !== "string" || !VALID_EVENT_TYPES.has(eventType)) {
+      return res.status(400).json({ error: "Invalid eventType" });
+    }
+
+    // Validate subBin if provided
+    if (subBin !== undefined && !VALID_SUB_BINS.has(subBin)) {
+      return res.status(400).json({ error: "Invalid subBin value" });
+    }
+
+    // Sanitize string fields — truncate to safe lengths
+    const safeErrorCode = typeof errorCode === "string" ? errorCode.slice(0, 64) : null;
+    const safeGasType = typeof gasType === "string" ? gasType.slice(0, 32) : "unknown";
+
+    // Rate limit per binId
+    const allowed = await checkRateLimit(binId);
+    if (!allowed) {
+      return res.status(429).json({ error: "Too many requests" });
     }
 
     const binRef = db.collection("bins").doc(binId);
@@ -33,12 +117,12 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
       eventType,
       subBin: subBin || null,
       fillLevel: typeof fillLevel === "number" ? fillLevel : null,
-      errorCode: errorCode || null,
+      errorCode: safeErrorCode,
     };
 
     // Add extra fields for new event types
     if (eventType === "HARMFUL_GAS") {
-      eventData.gasType = gasType || "unknown";
+      eventData.gasType = safeGasType;
       eventData.gasLevel = typeof gasLevel === "number" ? gasLevel : null;
     }
     if (eventType === "MOISTURE_DETECTED") {
@@ -109,6 +193,11 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
           isResolved: false,
           resolvedAt: null,
         });
+        await sendAlertNotification(
+          "BIN_FULL",
+          "🗑️ Bin Full",
+          `${subBin.toUpperCase()} in ${binId} is full and needs emptying`
+        );
       }
 
       return res.status(200).json({
@@ -125,12 +214,17 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
         createdAt: now,
         subBin: subBin || null,
         alertType: "HARDWARE_ERROR",
-        message: `Hardware error: ${errorCode || "UNKNOWN"}`,
+        message: `Hardware error: ${safeErrorCode || "UNKNOWN"}`,
         severity: "error",
         resolved: false,
         isResolved: false,
         resolvedAt: null,
       });
+      await sendAlertNotification(
+        "HARDWARE_ERROR",
+        "⚠️ Hardware Error",
+        `${binId}: ${safeErrorCode || "Unknown hardware fault"} — check the bin`
+      );
 
       return res.status(200).json({ status: "HARDWARE_ERROR logged" });
     }
@@ -200,6 +294,11 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
         isResolved: false,
         resolvedAt: null,
       });
+      await sendAlertNotification(
+        "BATTERY_DETECTED",
+        "🔋 Battery Detected",
+        `Battery found in ${subBin.toUpperCase()} bin at ${binId} — remove immediately`
+      );
 
       return res.status(200).json({ status: "BATTERY_DETECTED alert created" });
     }
@@ -209,7 +308,7 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
     // ===============================
     if (eventType === "HARMFUL_GAS") {
       const normalizedGasLevel = typeof gasLevel === "number" ? gasLevel : 0;
-      const normalizedGasType = gasType || "unknown";
+      const normalizedGasType = safeGasType;
 
       // Only create alert if gas level is >= 500 PPM
       if (normalizedGasLevel < 500) {
@@ -233,6 +332,11 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
         isResolved: false,
         resolvedAt: null,
       });
+      await sendAlertNotification(
+        "HARMFUL_GAS",
+        "🚨 Harmful Gas Detected",
+        `${normalizedGasType} at ${normalizedGasLevel} PPM in ${binId} — investigate immediately`
+      );
 
       return res.status(200).json({
         status: "HARMFUL_GAS alert created",
@@ -268,6 +372,11 @@ exports.ingestBinEvent = functions.https.onRequest(async (req, res) => {
         isResolved: false,
         resolvedAt: null,
       });
+      await sendAlertNotification(
+        "MOISTURE_DETECTED",
+        "💧 Moisture Alert",
+        `High moisture (${normalizedMoisture}%) in ${subBin.toUpperCase()} bin at ${binId} — check for spillage`
+      );
 
       return res.status(200).json({
         status: "MOISTURE_DETECTED alert created",
@@ -297,9 +406,15 @@ exports.resolveAlert = functions.https.onRequest(async (req, res) => {
     const { binId, alertId } = req.body;
 
     if (!binId || !alertId) {
-      return res.status(400).json({
-        error: "Missing required fields: binId and alertId",
-      });
+      return res.status(400).json({ error: "Missing required fields: binId and alertId" });
+    }
+
+    if (typeof binId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(binId)) {
+      return res.status(400).json({ error: "Invalid binId format" });
+    }
+
+    if (typeof alertId !== "string" || !/^[A-Za-z0-9]{1,128}$/.test(alertId)) {
+      return res.status(400).json({ error: "Invalid alertId format" });
     }
 
     const alertRef = db

@@ -772,6 +772,8 @@ class _ModernBinCardState extends State<_ModernBinCard>
                             children: [
                               Text(
                                 widget.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 16,
@@ -788,12 +790,16 @@ class _ModernBinCardState extends State<_ModernBinCard>
                                     color: AppColors.textSecondary(context),
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    widget.location,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary(context),
+                                  Flexible(
+                                    child: Text(
+                                      widget.location,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary(context),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -803,29 +809,36 @@ class _ModernBinCardState extends State<_ModernBinCard>
                         ),
 
                         // Status badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha:0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(statusIcon, size: 14, color: statusColor),
-                              const SizedBox(width: 4),
-                              Text(
-                                statusLabel,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 11,
-                                  color: statusColor,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 110),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha:0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(statusIcon, size: 14, color: statusColor),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    statusLabel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11,
+                                      color: statusColor,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
 

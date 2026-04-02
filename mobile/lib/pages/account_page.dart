@@ -18,7 +18,7 @@ class AccountPage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final authService = AuthService();
-    final userEmail = authService.getUserEmail() ?? 'admin@smartbin.com';
+    final userEmail = authService.getUserEmail() ?? 'admin';
 
     return Scaffold(
       backgroundColor: bg,
