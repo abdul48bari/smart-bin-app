@@ -14,18 +14,22 @@ smart-bin-app/
 │   │   ├── pages/         ← home_page, bins_page, analytics_page, account_page, login_page
 │   │   ├── providers/     ← app_state_provider.dart (central state hub)
 │   │   ├── screens/       ← auth_wrapper.dart
-│   │   ├── services/      ← firestore_service, simulation_service, voice_assistant_service*
+│   │   ├── services/      ← firestore_service, simulation_service, notification_service, voice_assistant_service*
 │   │   ├── utils/         ← app_colors.dart
 │   │   └── widgets/       ← voice_assistant_modal.dart
 │   └── build/web/         ← compiled output, deploy this folder to Vercel
-└── [website folder]       ← Reclevo marketing website (separate)
+├── functions/       ← Firebase Cloud Functions (Node.js) — IoT event ingestion
+│   └── index.js
+└── website/         ← Reclevo marketing website (Next.js 14, separate Vercel deployment)
 ```
 
 ## Tech Stack
-- **Flutter** web app (Dart)
+- **Flutter** web/Android app (Dart)
 - **Firebase Firestore** — real-time bin data, alerts, events
 - **Firebase Auth** — email/password login
-- **Vercel** — hosting (deploy from `mobile/build/web/`)
+- **Firebase Cloud Messaging (FCM)** — push notifications to Android
+- **Firebase Cloud Functions** — IoT event ingestion from Raspberry Pi
+- **Vercel** — hosting for both the Flutter web app and marketing website
 - **Web Speech API** — voice assistant (Chrome/Edge only)
 
 ## Key Architecture Decisions
@@ -57,12 +61,46 @@ bins/{binId}
   ├── subBins/{subBinId}       ← plastic, paper, organic, cans, mixed
   │     currentFillPercent, isFull
   ├── alerts/{alertId}
-  │     alertType (BATTERY_DETECTED | HARMFUL_GAS | MOISTURE_DETECTED | HARDWARE_ERROR)
+  │     alertType (BATTERY_DETECTED | HARMFUL_GAS | MOISTURE_DETECTED | HARDWARE_ERROR | BIN_FULL)
   │     message, severity (warning | error), subBin, createdAt, isResolved, resolvedAt
   │     gasType?, gasLevel?, moistureLevel?
   └── events/{eventId}
-        eventType (BIN_FULL | PIECE_COLLECTED), subBin, timestamp
+        eventType (BIN_FULL | PIECE_COLLECTED | LEVEL_UPDATE | BIN_EMPTIED | HARDWARE_ERROR |
+                   BATTERY_DETECTED | HARMFUL_GAS | MOISTURE_DETECTED), subBin, timestamp
+
+_rateLimits/{binId}            ← Cloud Function rate limiting (auto-created, max 60 req/min per bin)
+  └── count, windowStartMs
 ```
+
+## Push Notifications (Android)
+- `services/notification_service.dart` — initializes FCM + local notifications
+- Called via `NotificationService.initialize()` in `main.dart` (skipped on web via `kIsWeb`)
+- All devices subscribe to `bin_alerts` FCM topic on startup
+- Two Android notification channels: `safety_alerts` (max importance) and `bin_alerts` (high importance)
+- Cloud Functions send FCM to the topic on every alert creation
+- **Safety alerts** (BATTERY_DETECTED, HARMFUL_GAS, MOISTURE_DETECTED, HARDWARE_ERROR) → `safety_alerts` channel with vibration
+- **BIN_FULL** → `bin_alerts` channel
+- Requires `firebase_messaging: ^16.1.0` (v15.x incompatible with cloud_firestore ^6.x)
+- Requires `flutter_local_notifications: ^18.0.1` + `isCoreLibraryDesugaringEnabled = true` in build.gradle.kts
+
+## Cloud Functions (`functions/index.js`)
+Two HTTP endpoints called by the Raspberry Pi:
+
+### POST `/ingestBinEvent`
+Handles all hardware events. Validates input, rate-limits per binId (60 req/min), creates alerts and sends FCM.
+
+**Valid eventTypes**: `LEVEL_UPDATE`, `BIN_FULL`, `BIN_EMPTIED`, `PIECE_COLLECTED`, `HARDWARE_ERROR`, `BATTERY_DETECTED`, `HARMFUL_GAS`, `MOISTURE_DETECTED`
+
+**Valid subBins**: `plastic`, `paper`, `organic`, `cans`, `mixed`
+
+**binId format**: `^[A-Za-z0-9_-]{1,64}$`
+
+Alert thresholds: HARMFUL_GAS only alerts if gasLevel >= 500 PPM; MOISTURE_DETECTED only alerts if moistureLevel >= 70
+
+### POST `/resolveAlert`
+Manually resolves a safety alert. Payload: `{ binId, alertId }`. Only resolves safety types — BIN_FULL is auto-resolved by BIN_EMPTIED.
+
+**Deploy**: `firebase deploy --only functions --project smart-bin-app-uowd`
 
 ## Voice Assistant
 
@@ -109,7 +147,26 @@ bins/{binId}
 - paper ← papper
 - mixed ← mix, mixes
 
+## Marketing Website (`website/`)
+Next.js 14 + TypeScript + Tailwind. Separate Vercel deployment.
+
+**Key components:**
+- `Hero.tsx` — Aurora WebGL background, DecryptedText animation, Spline 3D model
+- `Features.tsx`, `TechStack.tsx` — SpotlightCard mouse-tracking effect
+- `AppPreview.tsx` — Particles WebGL background
+- `About.tsx` — BlurText word-by-word animation
+
+**ReactBits components** (in `src/components/`): `Aurora.tsx`, `Particles.tsx` (both use OGL/WebGL), `DecryptedText.tsx`, `BlurText.tsx` (Framer Motion), `SpotlightCard.tsx`
+
+**CSP in `next.config.js`**: Must include `https://*.spline.design` in `connect-src` and `img-src` — Spline fetches its scene file externally. Missing this causes "Application error: client-side exception".
+
+**Deploy**: from `website/` run `vercel --prod`
+
+**Live URL**: https://reclevo.vercel.app (or linked domain)
+
 ## Deployment
+
+### Flutter Web App
 ```bash
 # From mobile/ directory:
 flutter build web --no-tree-shake-icons
@@ -119,14 +176,31 @@ vercel --prod
 ```
 Live URL: https://smart-bin-app-eta.vercel.app
 
+### Marketing Website
+```bash
+# From website/ directory:
+vercel --prod
+```
+
+### Cloud Functions
+```bash
+# From functions/ directory:
+firebase deploy --only functions --project smart-bin-app-uowd
+```
+
 ## Common Gotchas
 - Do NOT commit `mobile/build/` directory (it's large and regenerated)
+- Do NOT commit auto-generated Flutter plugin files (`linux/flutter/generated_*`, `windows/flutter/generated_*`, `android/build/`) — they change on every `flutter pub get`
 - Wasm warnings from flutter_tts package are expected — they don't block the build
 - `FirestoreService` uses a singleton pattern — `isDemoMode` is static so it affects all instances
 - The `_pieceCountController` timer in FirestoreService must be guarded with `if (isDemoMode) return;` or it keeps polling Firestore after demo entry
 - `resolveAlert()` writes both `resolved: true` AND `isResolved: true` (schema has both fields)
+- `withOpacity()` is deprecated in Flutter — use `withValues(alpha: x)` instead
+- CSP in `next.config.js`: always include `https://*.spline.design` in `connect-src` or the 3D model will fail to load and crash the page
+- `firebase_messaging ^16.1.0` required — v15.x conflicts with cloud_firestore ^6.x on `firebase_core_platform_interface`
 
 ## Git Conventions
 - Short, lowercase commit messages (`feat:`, `fix:`, `refactor:`)
-- No co-author lines
+- No co-author lines, no "Co-Authored-By" or any Claude contribution lines
+- Never mention Claude in commit messages
 - Main branch is `main`
