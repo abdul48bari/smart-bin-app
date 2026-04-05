@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
 
     <application
-        android:label="mobile"
+        android:label="Reclevo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

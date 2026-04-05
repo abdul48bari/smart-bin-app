@@ -238,22 +238,39 @@ class VoiceAssistantService {
       final subBin = _resolveSubBin(cmd);
 
       // Help
-      if (_hasIntent(cmd, ['help', 'what can you do', 'commands', 'capabilities'])) {
+      if (_hasIntent(cmd, [
+        'help', 'what can you do', 'commands', 'capabilities',
+        'assist', 'guide', 'tutorial', 'instructions',
+        'what can i ask', 'what can i say', 'what do you know',
+        'what do you do', 'show me what', 'options',
+      ])) {
         return _getHelp();
       }
 
+      // Summary / overview
+      if (_hasIntent(cmd, ['summary', 'overview', 'everything', 'give me all', 'tell me everything', 'full report'])) {
+        final status = await _getSystemStatus();
+        final health = await _getSystemHealth();
+        return "$status $health";
+      }
+
       // Most full bin
-      if (_hasIntent(cmd, ['most full', 'fullest', 'which bin is full', 'which bin full'])) {
+      if (_hasIntent(cmd, ['most full', 'fullest', 'which bin is full', 'which bin full', 'highest fill'])) {
         return await _getMostFullBin(binTarget);
       }
 
       // Bins needing emptying
-      if (_hasIntent(cmd, ['empty', 'urgent', 'need attention', 'needs emptying', 'need emptying', 'need collection', 'collect'])) {
+      if (_hasIntent(cmd, [
+        'empty', 'urgent', 'need attention', 'needs emptying',
+        'need emptying', 'need collection', 'collect',
+        'any full', 'bins full', 'need to be emptied',
+      ])) {
         return await _getBinsNeedingEmptying();
       }
 
-      // Sub-bin fill level (e.g. "fill level of plastic in bin 2")
-      if (subBin != null && _fillIntent(cmd)) {
+      // Sub-bin query — handles "fill level of plastic in bin 2"
+      // AND "what is the status of paper in bin 2" (already normalised above)
+      if (subBin != null) {
         return await _getSubBinLevel(cmd, binTarget, subBin);
       }
 
@@ -267,7 +284,7 @@ class VoiceAssistantService {
       }
 
       // System health
-      if (_hasIntent(cmd, ['health', 'system health', 'overall health', 'health score'])) {
+      if (_hasIntent(cmd, ['health', 'system health', 'overall health', 'health score', 'how healthy'])) {
         return await _getSystemHealth();
       }
 
@@ -291,12 +308,17 @@ class VoiceAssistantService {
         return await _getAnalytics(cmd);
       }
 
-      return "I didn't understand that. Say 'help' to hear what I can do, or try: "
+      // Fallback — try to be helpful based on what we parsed
+      if (binTarget != 'all') {
+        return await _getFillLevelForTarget(cmd, binTarget);
+      }
+
+      return "I didn't catch that. You can ask things like: "
           "\"fill level of plastic in bin 2\", "
-          "\"which bins need emptying?\", "
-          "\"any safety alerts?\".";
+          "\"which bins need emptying\", "
+          "\"system status\", or say \"help\" for all commands.";
     } catch (e) {
-      return "Sorry, I encountered an error processing your request.";
+      return "Sorry, something went wrong. Please try again.";
     }
   }
 
@@ -307,33 +329,35 @@ class VoiceAssistantService {
   bool _fillIntent(String cmd) {
     return _hasIntent(cmd, [
       'fill', 'capacity', 'how full', 'percent', 'fullest', 'most full', 'level',
+      'what is bin', 'how is bin', 'about bin',
     ]);
   }
 
   bool _statusIntent(String cmd) {
     return _hasIntent(cmd, [
       'status', 'online', 'offline', 'working', 'operational', 'active',
-      'how many bins', 'number of bins',
+      'how many bins', 'number of bins', 'all bins', 'bins online',
     ]);
   }
 
   bool _safetyIntent(String cmd) {
     return _hasIntent(cmd, [
       'safety', 'battery', 'harmful gas', 'gas alert', 'moisture', 'hazard',
-      'toxic', 'dangerous',
+      'toxic', 'dangerous', 'fire', 'smoke', 'chemical',
     ]);
   }
 
   bool _alertIntent(String cmd) {
     return _hasIntent(cmd, [
-      'alert', 'alarm', 'warning', 'issue', 'problem',
+      'alert', 'alarm', 'warning', 'issue', 'problem', 'notification', 'error',
     ]);
   }
 
   bool _analyticsIntent(String cmd) {
     return _hasIntent(cmd, [
       'collected', 'collection', 'piece', 'item', 'recycle', 'stat',
-      'today', 'week', 'month', 'most common', 'top waste',
+      'today', 'week', 'month', 'most common', 'top waste', 'analytics',
+      'how many items', 'how much', 'report',
     ]);
   }
 
@@ -671,10 +695,14 @@ class VoiceAssistantService {
   }
 
   String _getHelp() {
-    return "I can help with: fill levels (all bins or specific), sub-bin levels like plastic or organic, "
-        "which bins need emptying, system status and health, safety alerts (battery, gas, moisture), "
-        "active alerts, and collection statistics by day, week, or month. "
-        "Try: 'fill level of plastic in bin 2', 'which bins need emptying', or 'how many items this week'.";
+    return "Here's what I can do. "
+        "Fill levels: say 'fill level of all bins', 'how full is bin 3', or 'fill level of plastic in bin 2'. "
+        "Emptying: say 'which bins need emptying' or 'urgent bins'. "
+        "Status: say 'system status' or 'how many bins are online'. "
+        "Health: say 'system health'. "
+        "Alerts: say 'any safety alerts', 'battery alerts', or 'any warnings'. "
+        "Stats: say 'items collected this week' or 'most common waste today'. "
+        "Summary: say 'give me a summary' for a full overview.";
   }
 
   Future<String> _getMostFullBin(String binTarget) async {
@@ -847,13 +875,21 @@ class VoiceAssistantService {
     String n = text.toLowerCase().trim();
 
     final corrections = <String, String>{
-      // bin / bins
+      // bin / bins — common misrecognitions
       r'\bbeans?\b': 'bins',
       r'\bbeen\b': 'bin',
       r'\bben\b': 'bin',
       r'\bpin\b': 'bin',
       r'\bbun\b': 'bin',
       r'\bbing\b': 'bin',
+      r'\bbins\b': 'bins',
+
+      // "bin two" spoken fast → sounds like "pintu" / "pentu" (common accent pattern)
+      r'\bpintu\b': 'bin two',
+      r'\bpentu\b': 'bin two',
+      r'\bpinto\b': 'bin two',
+      r'\bpinchu\b': 'bin two',
+      r'\bpento\b': 'bin two',
 
       // fill
       r'\bfeel\b': 'fill',
@@ -864,6 +900,16 @@ class VoiceAssistantService {
       r'\bfell\b': 'fill',
       r'\bfilm\b': 'fill',
       r'\bfull level\b': 'fill level',
+      r'\bhow full is\b': 'fill level of',
+      r'\bhow full are\b': 'fill level of',
+      r'\bwhat is the level\b': 'fill level',
+      r"\bwhat's the level\b": 'fill level',
+
+      // help misrecognitions
+      r'\bhealp\b': 'help',
+      r'\bheelp\b': 'help',
+      r'\bkelp\b': 'help',
+      r'\belp\b': 'help',
 
       // status
       r'\bstadiums?\b': 'status',
@@ -879,29 +925,54 @@ class VoiceAssistantService {
       r'\bplastick\b': 'plastic',
       r'\bpapper\b': 'paper',
       r'\borgenik\b': 'organic',
+      r'\borganik\b': 'organic',
+      r'\borganic bin\b': 'organic',
 
       // safety alert terms
       r'\bbatter\b': 'battery',
       r'\bgass\b': 'gas',
       r'\bmoister\b': 'moisture',
+      r'\bmoisture level\b': 'moisture',
 
       // cans
       r'\bchance\b': 'cans',
       r'\bkanz\b': 'cans',
       r'\bkans\b': 'cans',
+      r'\bcan\b': 'cans',
+      r'\btins\b': 'cans',
 
       // number words that conflict with vocabulary
       r'\bwon\b': 'one',
       r'\btoo\b': 'two',
       r'\btree\b': 'three',
+      r'\bfor\b(?=\s+bin|\s+the|\s+me)': 'four',
 
       // online / offline spacing
       r'\bon line\b': 'online',
       r'\boff line\b': 'offline',
+      r'\boff-line\b': 'offline',
+      r'\bon-line\b': 'online',
 
       // mixed
       r'\bmix\b': 'mixed',
       r'\bmixes\b': 'mixed',
+
+      // common conversational phrasings → normalise to something the intents can match
+      r'\btell me about\b': 'fill level of',
+      r'\bcheck on\b': 'fill level of',
+      r'\bcheck\b': 'fill level of',
+      r'\bhow is the\b': 'fill level of',
+      r'\bhow are the\b': 'fill level of',
+      r'\bwhat is the status of\b': 'fill level of',
+      r"\bwhat's the status of\b": 'fill level of',
+      r'\bgive me the fill\b': 'fill level',
+      r'\bshow me\b': 'fill level of',
+
+      // location shorthand
+      r'\bdining hall\b': 'dining',
+      r'\bscience laboratory\b': 'science lab',
+      r'\bgym floor\b': 'gym',
+      r'\bcafeteria\b': 'cafe',
     };
 
     corrections.forEach((pattern, replacement) {
