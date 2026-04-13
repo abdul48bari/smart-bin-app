@@ -11,7 +11,7 @@
 
 <br/>
 
-### [Live Web App](https://smart-bin-app-eta.vercel.app) &nbsp;·&nbsp; [Marketing Website](https://reclevo.vercel.app) &nbsp;·&nbsp; [Download APK](./Reclevo.apk)
+### [Live Web App](https://smart-bin-app-eta.vercel.app) &nbsp;·&nbsp; [Marketing Website](https://reclevo-website-azure.vercel.app) &nbsp;·&nbsp; [Download APK](./Reclevo.apk)
 
 </div>
 
@@ -54,7 +54,7 @@ The project is composed of three components:
 | | URL |
 |---|---|
 | **Admin Dashboard (Web)** | https://smart-bin-app-eta.vercel.app |
-| **Marketing Website** | https://reclevo.vercel.app |
+| **Marketing Website** | https://reclevo-website-azure.vercel.app |
 | **Android APK** | [`Reclevo.apk`](./Reclevo.apk) — download and install directly |
 
 > **Try it instantly:** Click "Try Demo Mode" on the login screen — no account needed. The demo simulates 7 live bins with real-time data, charts, alerts, voice assistant, and all features fully enabled.
@@ -259,7 +259,7 @@ Alerts are automatically created by Cloud Functions when sensors report:
 
 The marketing website is a separate **Next.js 14** application, deployed independently on Vercel.
 
-**Visit:** https://reclevo.vercel.app
+**Visit:** https://reclevo-website-azure.vercel.app
 
 The website presents Reclevo as a product with the following sections:
 
