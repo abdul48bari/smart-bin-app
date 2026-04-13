@@ -373,9 +373,9 @@ firebase deploy --only functions --project smart-bin-app-uowd
 
 | Name | Contribution |
 |---|---|
-| **Umar** | Mobile application UI design and logic |
-| **Asim** | Backend API, Firestore architecture, and Cloud Functions |
-| **Amer** | System architecture design and review |
+| **Abdul Bari Ummer** | Mobile application UI design and logic |
+| **Mohammed Asim Ahmed** | Backend API, Firestore architecture, and Cloud Functions |
+| **Mohammed Amer** | System architecture design and review |
 | **Danish Tanwar** | AI model training (MobileNetV2 / TFLite) and Raspberry Pi hardware integration |
 
 ---
