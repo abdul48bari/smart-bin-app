@@ -113,10 +113,8 @@ class _SubBinRow extends StatelessWidget {
     required this.accent,
   });
 
-  Color _getFillColor(int percent) {
-    if (percent >= 100) return Colors.redAccent;
-    if (percent >= 50) return Colors.amber;
-    return Colors.green;
+  Color _getTypeColor(String id) {
+    return AppColors.subBinColors[id.toLowerCase()] ?? const Color(0xFF6B7280);
   }
 
   IconData _getIcon(String id) {
@@ -138,7 +136,7 @@ class _SubBinRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final double percent = (fillPercent / 100).clamp(0.0, 1.0);
-    final Color barColor = _getFillColor(fillPercent);
+    final Color typeColor = _getTypeColor(label);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -148,12 +146,10 @@ class _SubBinRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: isDark 
-                  ? Colors.white.withValues(alpha:0.05)
-                  : Colors.grey.shade100,
+              color: typeColor.withValues(alpha: isDark ? 0.18 : 0.12),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(_getIcon(label), color: accent),
+            child: Icon(_getIcon(label), color: typeColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -176,19 +172,19 @@ class _SubBinRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary(context),
+                        color: typeColor,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    height: 12,
-                    color: isDark 
-                        ? Colors.white.withValues(alpha:0.1)
-                        : Colors.grey.shade200,
+                    height: 8,
+                    color: isDark
+                        ? Colors.white.withValues(alpha:0.08)
+                        : Colors.grey.shade100,
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         return AnimatedContainer(
@@ -196,9 +192,8 @@ class _SubBinRow extends StatelessWidget {
                           curve: Curves.easeOutCubic,
                           width: constraints.maxWidth * percent,
                           decoration: BoxDecoration(
-                            color: barColor,
-                            borderRadius: BorderRadius.circular(14),
-                            // No shadow for cleaner design
+                            color: typeColor,
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         );
                       },

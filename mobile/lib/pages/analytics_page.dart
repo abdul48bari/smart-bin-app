@@ -22,13 +22,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   TimeFilter _selectedFilter = TimeFilter.day;
 
-  // Sub-bin colors (KEEP THESE - they look good in both modes!)
+  // Sub-bin colors — kept in sync with AppColors.subBinColors
   static const Map<String, Color> _subBinColors = {
-    'plastic': Color(0xFF3B82F6),
-    'paper': Color(0xFF10B981),
-    'organic': Color(0xFF92400E),
-    'cans': Color(0xFFF59E0B),
-    'mixed': Color(0xFF8B5CF6),
+    'plastic': Color(0xFFE8703A), // Orange
+    'paper': Color(0xFF4E80EE),   // Blue
+    'organic': Color(0xFFD4A017), // Yellow
+    'cans': Color(0xFF6B7280),    // Gray
+    'mixed': Color(0xFF8B5CF6),   // Purple
   };
 
   @override

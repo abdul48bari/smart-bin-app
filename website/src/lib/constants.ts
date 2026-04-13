@@ -196,9 +196,9 @@ export const TEAM = [
 ]
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  plastic: '#6366f1',
-  paper: '#10B981',
-  organic: '#d97706',
-  cans: '#F59E0B',
-  mixed: '#8B5CF6',
+  plastic: '#E8703A', // Orange
+  paper: '#4E80EE',   // Blue
+  organic: '#D4A017', // Yellow
+  cans: '#6B7280',    // Gray
+  mixed: '#8B5CF6',   // Purple
 }

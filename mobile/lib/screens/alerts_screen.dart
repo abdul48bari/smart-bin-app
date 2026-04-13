@@ -5,13 +5,21 @@ import '../services/firestore_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/shadows.dart';
 
-class AlertsScreen extends StatelessWidget {
+class AlertsScreen extends StatefulWidget {
   final String binId;
 
   const AlertsScreen({
     super.key,
     required this.binId,
   });
+
+  @override
+  State<AlertsScreen> createState() => _AlertsScreenState();
+}
+
+class _AlertsScreenState extends State<AlertsScreen> {
+  // 'active' or 'old'
+  String _selectedFilter = 'active';
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +31,7 @@ class AlertsScreen extends StatelessWidget {
       backgroundColor: bg,
       appBar: AppBar(
         title: Text(
-          'Alerts — $binId',
+          widget.binId,
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 17,
@@ -35,64 +43,69 @@ class AlertsScreen extends StatelessWidget {
         iconTheme: IconThemeData(color: AppColors.textPrimary(context)),
       ),
       body: StreamBuilder<List<AlertModel>>(
-        stream: firestoreService.getActiveAlerts(binId),
+        stream: firestoreService.getActiveAlerts(widget.binId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator(color: accent));
           }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return _EmptyAlertsState(accent: accent);
-          }
-
-          final alerts = snapshot.data!;
+          final alerts = snapshot.data ?? [];
           final activeAlerts = alerts.where((a) => !a.isResolved).toList();
           final resolvedAlerts = alerts.where((a) => a.isResolved).toList();
+          final displayed =
+              _selectedFilter == 'active' ? activeAlerts : resolvedAlerts;
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+          return Column(
             children: [
-              // ACTIVE ALERTS
-              if (activeAlerts.isNotEmpty) ...[
-                _SectionHeader(
-                  label: 'Active',
-                  count: activeAlerts.length,
-                  color: Colors.redAccent,
-                ),
-                const SizedBox(height: 8),
-                ...activeAlerts.asMap().entries.map((e) {
-                  return _AnimatedIn(
-                    delayMs: 50 + (e.key * 60),
-                    child: _AlertCard(
-                      alert: e.value,
-                      binId: binId,
+              // FILTER TAB BAR
+              Container(
+                color: AppColors.surface(context),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Row(
+                  children: [
+                    _FilterTab(
+                      label: 'Active',
+                      count: activeAlerts.length,
+                      selected: _selectedFilter == 'active',
+                      color: Colors.redAccent,
+                      accent: accent,
+                      onTap: () => setState(() => _selectedFilter = 'active'),
                     ),
-                  );
-                }),
-                const SizedBox(height: 16),
-              ],
-
-              // RESOLVED ALERTS
-              if (resolvedAlerts.isNotEmpty) ...[
-                _SectionHeader(
-                  label: 'Resolved',
-                  count: resolvedAlerts.length,
-                  color: Colors.green,
-                ),
-                const SizedBox(height: 8),
-                ...resolvedAlerts.asMap().entries.map((e) {
-                  return _AnimatedIn(
-                    delayMs: 50 + (e.key * 40),
-                    child: _AlertCard(
-                      alert: e.value,
-                      binId: binId,
+                    const SizedBox(width: 10),
+                    _FilterTab(
+                      label: 'Old',
+                      count: resolvedAlerts.length,
+                      selected: _selectedFilter == 'old',
+                      color: Colors.green,
+                      accent: accent,
+                      onTap: () => setState(() => _selectedFilter = 'old'),
                     ),
-                  );
-                }),
-              ],
+                  ],
+                ),
+              ),
+              const Divider(height: 1, thickness: 1),
 
-              if (activeAlerts.isEmpty && resolvedAlerts.isEmpty)
-                _EmptyAlertsState(accent: accent),
+              // ALERTS LIST
+              Expanded(
+                child: displayed.isEmpty
+                    ? _EmptyAlertsState(
+                        accent: accent,
+                        isOld: _selectedFilter == 'old',
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 80),
+                        itemCount: displayed.length,
+                        itemBuilder: (context, index) {
+                          return _AnimatedIn(
+                            delayMs: 40 + (index * 50),
+                            child: _AlertCard(
+                              alert: displayed[index],
+                              binId: widget.binId,
+                            ),
+                          );
+                        },
+                      ),
+              ),
             ],
           );
         },
@@ -101,48 +114,80 @@ class AlertsScreen extends StatelessWidget {
   }
 }
 
-// ======================= SECTION HEADER =======================
+// ======================= FILTER TAB =======================
 
-class _SectionHeader extends StatelessWidget {
+class _FilterTab extends StatelessWidget {
   final String label;
   final int count;
+  final bool selected;
   final Color color;
+  final Color accent;
+  final VoidCallback onTap;
 
-  const _SectionHeader({
+  const _FilterTab({
     required this.label,
     required this.count,
+    required this.selected,
     required this.color,
+    required this.accent,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary(context),
+    final activeColor = selected ? color : AppColors.textSecondary(context);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected
+              ? color.withValues(alpha: 0.1)
+              : AppColors.surfaceSecondary(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected
+                ? color.withValues(alpha: 0.35)
+                : Colors.transparent,
+            width: 1.5,
           ),
         ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha:0.12),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: color,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                color: activeColor,
+              ),
             ),
-          ),
+            if (count > 0) ...[
+              const SizedBox(width: 7),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? color.withValues(alpha: 0.15)
+                      : AppColors.border(context),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: activeColor,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -151,8 +196,9 @@ class _SectionHeader extends StatelessWidget {
 
 class _EmptyAlertsState extends StatelessWidget {
   final Color accent;
+  final bool isOld;
 
-  const _EmptyAlertsState({required this.accent});
+  const _EmptyAlertsState({required this.accent, this.isOld = false});
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +223,7 @@ class _EmptyAlertsState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'All Clear',
+              isOld ? 'No History' : 'All Clear',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -186,7 +232,9 @@ class _EmptyAlertsState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'No alerts for this bin',
+              isOld
+                  ? 'No resolved alerts yet'
+                  : 'No active alerts for this bin',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

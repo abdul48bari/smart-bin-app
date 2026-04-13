@@ -58,10 +58,10 @@ class AppColors {
 
   /// Map of waste type to color
   static const Map<String, Color> subBinColors = {
-    'plastic': Color(0xFF3B82F6), // Blue
-    'paper': Color(0xFF10B981),   // Green
-    'organic': Color(0xFF92400E), // Brown
-    'cans': Color(0xFFF59E0B),    // Amber
+    'plastic': Color(0xFFE8703A), // Orange
+    'paper': Color(0xFF4E80EE),   // Blue
+    'organic': Color(0xFFD4A017), // Yellow
+    'cans': Color(0xFF6B7280),    // Gray
     'mixed': Color(0xFF8B5CF6),   // Purple
   };
 

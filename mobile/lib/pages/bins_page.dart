@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../widgets/live_bin_status_card.dart';
 import '../services/firestore_service.dart';
-import '../models/alert.dart';
 import '../screens/alerts_screen.dart';
 import '../utils/app_colors.dart';
 import '../widgets/glass_container.dart';
@@ -989,60 +988,19 @@ class _ModernBinCardState extends State<_ModernBinCard>
               child: expanded
                   ? Column(
                       children: [
-                        // Safety alerts inline (if any)
-                        if (widget.safetyAlertCount > 0) ...[
-                          _SafetyAlertsInlineCard(
-                            binId: widget.binId,
-                            accent: widget.accent,
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-
-                        // Live status card
+                        // Live sub-bin fill levels
                         LiveBinStatusCard(
                           binId: widget.binId,
                           accent: widget.accent,
                         ),
                         const SizedBox(height: 12),
 
-                        // Alerts card
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder: (_, _, _) =>
-                                    AlertsScreen(binId: widget.binId),
-                                transitionsBuilder:
-                                    (
-                                      context,
-                                      animation,
-                                      secondaryAnimation,
-                                      child,
-                                    ) {
-                                      final curved = CurvedAnimation(
-                                        parent: animation,
-                                        curve: Curves.easeOutCubic,
-                                      );
-                                      return FadeTransition(
-                                        opacity: curved,
-                                        child: SlideTransition(
-                                          position: Tween<Offset>(
-                                            begin: const Offset(0, 0.04),
-                                            end: Offset.zero,
-                                          ).animate(curved),
-                                          child: child,
-                                        ),
-                                      );
-                                    },
-                              ),
-                            );
-                          },
-                          child: _BinAlertsCard(
-                            binId: widget.binId,
-                            accent: widget.accent,
-                            accentSoft: widget.accentSoft,
-                          ),
+                        // View Alerts button
+                        _ViewAlertsButton(
+                          binId: widget.binId,
+                          alertCount: widget.alertCount,
+                          safetyAlertCount: widget.safetyAlertCount,
+                          accent: widget.accent,
                         ),
                         const SizedBox(height: 12),
                       ],
@@ -1056,289 +1014,118 @@ class _ModernBinCardState extends State<_ModernBinCard>
   }
 }
 
-// SAFETY ALERTS INLINE CARD (shown at top of expanded bin)
-class _SafetyAlertsInlineCard extends StatelessWidget {
+// VIEW ALERTS BUTTON
+class _ViewAlertsButton extends StatelessWidget {
   final String binId;
+  final int alertCount;
+  final int safetyAlertCount;
   final Color accent;
 
-  const _SafetyAlertsInlineCard({
+  const _ViewAlertsButton({
     required this.binId,
+    required this.alertCount,
+    required this.safetyAlertCount,
     required this.accent,
   });
 
-  IconData _iconFor(String alertType) {
-    switch (alertType) {
-      case 'BATTERY_DETECTED':
-        return Icons.battery_alert_rounded;
-      case 'HARMFUL_GAS':
-        return Icons.air_rounded;
-      case 'MOISTURE_DETECTED':
-        return Icons.water_drop_rounded;
-      default:
-        return Icons.warning_rounded;
-    }
-  }
-
-  Color _colorFor(String alertType) {
-    switch (alertType) {
-      case 'BATTERY_DETECTED':
-        return const Color(0xFFDC2626);
-      case 'HARMFUL_GAS':
-        return const Color(0xFFD97706);
-      case 'MOISTURE_DETECTED':
-        return const Color(0xFF2563EB);
-      default:
-        return Colors.redAccent;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('bins')
-          .doc(binId)
-          .collection('alerts')
-          .where('isResolved', isEqualTo: false)
-          .snapshots(),
-      builder: (context, snap) {
-        final allDocs = snap.data?.docs ?? [];
-        // Filter safety alert types client-side to avoid composite index requirement
-        final docs = allDocs.where((d) {
-          final t = (d.data() as Map<String, dynamic>)['alertType'];
-          return t == 'BATTERY_DETECTED' ||
-              t == 'HARMFUL_GAS' ||
-              t == 'MOISTURE_DETECTED';
-        }).toList();
-        if (docs.isEmpty) return const SizedBox.shrink();
-
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.red.shade900.withValues(alpha:0.25)
-                : Colors.red.shade50,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Colors.redAccent.withValues(alpha:isDark ? 0.4 : 0.25),
-              width: 1.5,
+  void _navigate(BuildContext context) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => AlertsScreen(binId: binId),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.04),
+                end: Offset.zero,
+              ).animate(curved),
+              child: child,
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.shield_rounded,
-                      color: Colors.redAccent, size: 16),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Safety Alerts',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      color: isDark
-                          ? Colors.red.shade300
-                          : Colors.red.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withValues(alpha:0.15),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '${docs.length}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.redAccent,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ...docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                final alertType = data['alertType'] as String? ?? '';
-                final message = data['message'] as String? ?? '';
-                final color = _colorFor(alertType);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      Icon(_iconFor(alertType), size: 16, color: color),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          message,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary(context),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
-}
-
-// BIN ALERTS CARD
-class _BinAlertsCard extends StatelessWidget {
-  final String binId;
-  final Color accent;
-  final Color accentSoft;
-
-  const _BinAlertsCard({
-    required this.binId,
-    required this.accent,
-    required this.accentSoft,
-  });
 
   @override
   Widget build(BuildContext context) {
-    final firestoreService = FirestoreService();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool hasSafety = safetyAlertCount > 0;
+    final Color buttonColor = hasSafety ? Colors.redAccent : accent;
 
-    return StreamBuilder<List<AlertModel>>(
-      stream: firestoreService.getActiveAlerts(binId),
-      builder: (context, snapshot) {
-        final alerts = snapshot.data ?? [];
-
-        return Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [
-                      accent.withValues(alpha:0.08),
-                      AppColors.surface(context),
-                    ]
-                  : [
-                      accent.withValues(alpha:0.06),
-                      AppColors.surface(context),
-                    ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: () => _navigate(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: buttonColor.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: buttonColor.withValues(alpha: 0.2),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              hasSafety
+                  ? Icons.warning_rounded
+                  : Icons.notifications_outlined,
+              color: buttonColor,
+              size: 20,
             ),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.border(context), width: 1.5),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.notifications_active_rounded, color: accent),
-                  const SizedBox(width: 10),
-                  Text(
-                    "Alerts",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: AppColors.textPrimary(context),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface(context),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      "${alerts.length}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: accent,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
+            const SizedBox(width: 10),
+            Text(
+              'View Alerts',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: buttonColor,
               ),
-              const SizedBox(height: 12),
-              if (alerts.isEmpty)
-                Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded, color: accent, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      "No active alerts",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textSecondary(context),
-                      ),
-                    ),
-                  ],
-                )
-              else
-                ...alerts.take(5).map((a) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.warning_amber_rounded,
-                          color: Colors.redAccent,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            a.message,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary(context),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              if (alerts.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.touch_app_rounded,
-                      size: 14,
-                      color: AppColors.textSecondary(context),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      "Tap to view all alerts",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                        color: AppColors.textSecondary(context),
-                      ),
-                    ),
-                  ],
+            ),
+            const Spacer(),
+            if (alertCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
                 ),
-              ],
-            ],
-          ),
-        );
-      },
+                decoration: BoxDecoration(
+                  color: buttonColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$alertCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              )
+            else
+              Text(
+                'No alerts',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  color: AppColors.textSecondary(context),
+                ),
+              ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: buttonColor,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
