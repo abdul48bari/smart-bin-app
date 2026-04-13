@@ -21,3 +21,7 @@ lib/firebase_options.dart
 Thumbs.db
 .vscode/
 .claude/
+
+# Internal dev files
+CLAUDE.md
+Posters_reclevo/

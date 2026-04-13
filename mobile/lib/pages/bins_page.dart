@@ -9,6 +9,22 @@ import '../utils/app_colors.dart';
 import '../widgets/glass_container.dart';
 import '../providers/app_state_provider.dart';
 
+// Natural sort — handles "bin-001" < "bin-005" < "bin-010" correctly
+int _naturalCompare(String a, String b) {
+  final re = RegExp(r'(\d+)|(\D+)');
+  final aChunks = re.allMatches(a.toLowerCase()).map((m) => m.group(0)!).toList();
+  final bChunks = re.allMatches(b.toLowerCase()).map((m) => m.group(0)!).toList();
+  for (int i = 0; i < aChunks.length && i < bChunks.length; i++) {
+    final aNum = int.tryParse(aChunks[i]);
+    final bNum = int.tryParse(bChunks[i]);
+    final cmp = (aNum != null && bNum != null)
+        ? aNum.compareTo(bNum)
+        : aChunks[i].compareTo(bChunks[i]);
+    if (cmp != 0) return cmp;
+  }
+  return aChunks.length.compareTo(bChunks.length);
+}
+
 class BinsPage extends StatelessWidget {
   const BinsPage({super.key});
 
@@ -123,7 +139,16 @@ class BinsPage extends StatelessWidget {
                           );
                         }
 
-                        final bins = snapshot.data!.docs;
+                        final bins = snapshot.data!.docs.toList()
+                          ..sort((a, b) {
+                            final aName = ((a.data() as Map<String, dynamic>?)
+                                    ?['name'] as String?) ??
+                                a.id;
+                            final bName = ((b.data() as Map<String, dynamic>?)
+                                    ?['name'] as String?) ??
+                                b.id;
+                            return _naturalCompare(aName, bName);
+                          });
 
                         if (bins.isEmpty) {
                           return SliverToBoxAdapter(

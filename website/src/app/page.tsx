@@ -6,6 +6,7 @@ import About from '@/components/About'
 import HowItWorks from '@/components/HowItWorks'
 import Features from '@/components/Features'
 import TechStack from '@/components/TechStack'
+import StackDiagram from '@/components/StackDiagram'
 import AppPreview from '@/components/AppPreview'
 import Team from '@/components/Team'
 import Footer from '@/components/Footer'
@@ -25,6 +26,7 @@ export default function Home() {
       <HowItWorks />
       <Features />
       <TechStack />
+      <StackDiagram />
       <AppPreview />
       <Team />
       <Footer />

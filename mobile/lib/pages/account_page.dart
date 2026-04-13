@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 import '../widgets/theme_toggle_button.dart';
 import '../utils/app_colors.dart';
 import '../widgets/glass_container.dart';
@@ -419,14 +420,14 @@ class _BinManagementSection extends StatelessWidget {
             title: "Add New Bin",
             subtitle: "Register a new smart bin",
             accent: accent,
-            onTap: () => _showComingSoonDialog(context, "Add Bin"),
+            onTap: () => _showAddBinDialog(context),
           ),
           _SettingsItem(
             icon: Icons.remove_circle_rounded,
             title: "Remove Bin",
             subtitle: "Unregister an existing bin",
             accent: accent,
-            onTap: () => _showComingSoonDialog(context, "Remove Bin"),
+            onTap: () => _showRemoveBinDialog(context),
           ),
           _SettingsItem(
             icon: Icons.edit_rounded,
@@ -434,7 +435,7 @@ class _BinManagementSection extends StatelessWidget {
             subtitle: "Update bin information",
             accent: accent,
             isLast: true,
-            onTap: () => _showComingSoonDialog(context, "Edit Bin"),
+            onTap: () => _showEditBinDialog(context),
           ),
         ],
       ),
@@ -857,6 +858,698 @@ void _showLogoutDialog(BuildContext context) {
     ),
   );
 }
+
+// ─── ADD BIN ──────────────────────────────────────────────────────────────────
+
+void _showAddBinDialog(BuildContext context) {
+  final appState = Provider.of<AppStateProvider>(context, listen: false);
+  if (appState.isDemoMode) {
+    _showDemoRestrictedDialog(context);
+    return;
+  }
+  showDialog(
+    context: context,
+    builder: (context) => const _AddBinDialog(),
+  );
+}
+
+class _AddBinDialog extends StatefulWidget {
+  const _AddBinDialog();
+
+  @override
+  State<_AddBinDialog> createState() => _AddBinDialogState();
+}
+
+class _AddBinDialogState extends State<_AddBinDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _binIdCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
+  String _status = 'online';
+  bool _isLoading = false;
+  String? _errorMsg;
+
+  static const _statusOptions = ['online', 'offline', 'maintenance'];
+  static final _binIdRegex = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
+
+  @override
+  void dispose() {
+    _binIdCtrl.dispose();
+    _nameCtrl.dispose();
+    _locationCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _isLoading = true; _errorMsg = null; });
+    try {
+      await FirestoreService().addBin(
+        binId: _binIdCtrl.text.trim(),
+        name: _nameCtrl.text.trim(),
+        location: _locationCtrl.text.trim(),
+        status: _status,
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Bin "${_nameCtrl.text.trim()}" added successfully'),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (e) {
+      final msg = e.toString().contains('BIN_EXISTS')
+          ? 'A bin with this ID already exists. Choose a different ID.'
+          : 'Failed to add bin. Please try again.';
+      setState(() { _isLoading = false; _errorMsg = msg; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = AppColors.accent(context);
+    return AlertDialog(
+      backgroundColor: AppColors.surface(context),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: _dialogTitle(context, 'Add New Bin', Icons.add_circle_rounded, accent),
+      content: SizedBox(
+        width: 320,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _binTextField(context, controller: _binIdCtrl, label: 'Bin ID', hint: 'e.g. CAFE_C_08',
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Bin ID is required';
+                  if (!_binIdRegex.hasMatch(v.trim())) return 'Only letters, numbers, _ and - allowed';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              _binTextField(context, controller: _nameCtrl, label: 'Name', hint: 'e.g. Cafeteria Block C',
+                validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
+              ),
+              const SizedBox(height: 12),
+              _binTextField(context, controller: _locationCtrl, label: 'Location', hint: 'e.g. Food Court',
+                validator: (v) => v == null || v.trim().isEmpty ? 'Location is required' : null,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _status,
+                decoration: _inputDecoration(context, 'Status', accent),
+                dropdownColor: AppColors.surface(context),
+                style: TextStyle(color: AppColors.textPrimary(context), fontWeight: FontWeight.w600, fontSize: 14),
+                items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (v) => setState(() => _status = v ?? 'online'),
+              ),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 12),
+                Text(_errorMsg!, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: Text('Cancel', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textSecondary(context))),
+        ),
+        TextButton(
+          onPressed: _isLoading ? null : _submit,
+          child: _isLoading
+              ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: accent))
+              : Text('Add', style: TextStyle(fontWeight: FontWeight.w800, color: accent)),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── REMOVE BIN ───────────────────────────────────────────────────────────────
+
+void _showRemoveBinDialog(BuildContext context) {
+  final appState = Provider.of<AppStateProvider>(context, listen: false);
+  if (appState.isDemoMode) {
+    _showDemoRestrictedDialog(context);
+    return;
+  }
+  showDialog(
+    context: context,
+    builder: (context) => const _RemoveBinDialog(),
+  );
+}
+
+class _RemoveBinDialog extends StatefulWidget {
+  const _RemoveBinDialog();
+
+  @override
+  State<_RemoveBinDialog> createState() => _RemoveBinDialogState();
+}
+
+class _RemoveBinDialogState extends State<_RemoveBinDialog> {
+  List<Map<String, String>>? _bins;
+  String? _selectedId;
+  bool _isFetching = true;
+  bool _isRemoving = false;
+  bool _confirming = false;
+  String? _errorMsg;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBins();
+  }
+
+  Future<void> _loadBins() async {
+    try {
+      final list = await FirestoreService().getBinsList();
+      setState(() { _bins = list; _isFetching = false; });
+    } catch (_) {
+      setState(() { _isFetching = false; _errorMsg = 'Failed to load bins.'; });
+    }
+  }
+
+  Future<void> _remove() async {
+    if (_selectedId == null) return;
+    setState(() { _isRemoving = true; _errorMsg = null; });
+    try {
+      await FirestoreService().removeBin(_selectedId!);
+      if (mounted) {
+        final bin = _bins?.firstWhere((b) => b['id'] == _selectedId, orElse: () => {'name': _selectedId!});
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Bin "${bin?['name'] ?? _selectedId}" removed'),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+    } catch (_) {
+      setState(() { _isRemoving = false; _errorMsg = 'Failed to remove bin. Please try again.'; });
+    }
+  }
+
+  Map<String, String>? get _selected =>
+      _selectedId != null ? _bins?.firstWhere((b) => b['id'] == _selectedId, orElse: () => {'name': _selectedId!, 'location': '', 'id': _selectedId!}) : null;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = AppColors.accent(context);
+
+    if (_isFetching) {
+      return AlertDialog(
+        backgroundColor: AppColors.surface(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: SizedBox(height: 80, child: Center(child: CircularProgressIndicator(color: accent))),
+      );
+    }
+
+    return AlertDialog(
+      backgroundColor: AppColors.surface(context),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: _dialogTitle(context, _confirming ? 'Confirm Remove' : 'Remove Bin', Icons.remove_circle_rounded, Colors.redAccent),
+      content: SizedBox(
+        width: 320,
+        child: _confirming ? _buildConfirmView(context) : _buildSelectView(context),
+      ),
+      actions: _confirming ? _confirmActions(context) : _selectActions(context),
+    );
+  }
+
+  Widget _buildSelectView(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select the bin you want to remove:',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textSecondary(context)),
+        ),
+        const SizedBox(height: 12),
+        if (_bins == null || _bins!.isEmpty)
+          Text('No bins found.', style: TextStyle(color: AppColors.textSecondary(context), fontWeight: FontWeight.w600))
+        else
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 260),
+            child: SingleChildScrollView(
+              child: Column(
+                children: _bins!.map((bin) {
+                  final isSelected = bin['id'] == _selectedId;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedId = bin['id']),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.redAccent.withValues(alpha: 0.1) : AppColors.background(context),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected ? Colors.redAccent : AppColors.textSecondary(context).withValues(alpha: 0.2),
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline_rounded,
+                              color: isSelected ? Colors.redAccent : AppColors.textSecondary(context), size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(bin['name']!,
+                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary(context))),
+                                Text('${bin['id']} · ${bin['location']}',
+                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: AppColors.textSecondary(context))),
+                              ],
+                            ),
+                          ),
+                          if (isSelected) const Icon(Icons.check_circle_rounded, color: Colors.redAccent, size: 18),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        if (_errorMsg != null) ...[
+          const SizedBox(height: 10),
+          Text(_errorMsg!, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildConfirmView(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Are you sure you want to remove this bin? This cannot be undone.',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textSecondary(context)),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.redAccent.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.delete_rounded, color: Colors.redAccent, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_selected?['name'] ?? _selectedId!,
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary(context))),
+                    Text(_selected?['location'] ?? '',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.textSecondary(context))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_errorMsg != null) ...[
+          const SizedBox(height: 10),
+          Text(_errorMsg!, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+        ],
+      ],
+    );
+  }
+
+  List<Widget> _selectActions(BuildContext context) => [
+    TextButton(
+      onPressed: () => Navigator.pop(context),
+      child: Text('Cancel', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textSecondary(context))),
+    ),
+    TextButton(
+      onPressed: _selectedId == null ? null : () => setState(() => _confirming = true),
+      child: const Text('Next', style: TextStyle(fontWeight: FontWeight.w800, color: Colors.redAccent)),
+    ),
+  ];
+
+  List<Widget> _confirmActions(BuildContext context) => [
+    TextButton(
+      onPressed: _isRemoving ? null : () => setState(() { _confirming = false; _errorMsg = null; }),
+      child: Text('Back', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textSecondary(context))),
+    ),
+    TextButton(
+      onPressed: _isRemoving ? null : _remove,
+      child: _isRemoving
+          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent))
+          : const Text('Remove', style: TextStyle(fontWeight: FontWeight.w800, color: Colors.redAccent)),
+    ),
+  ];
+}
+
+// ─── EDIT BIN ─────────────────────────────────────────────────────────────────
+
+void _showEditBinDialog(BuildContext context) {
+  final appState = Provider.of<AppStateProvider>(context, listen: false);
+  if (appState.isDemoMode) {
+    _showDemoRestrictedDialog(context);
+    return;
+  }
+  showDialog(
+    context: context,
+    builder: (context) => const _EditBinDialog(),
+  );
+}
+
+class _EditBinDialog extends StatefulWidget {
+  const _EditBinDialog();
+
+  @override
+  State<_EditBinDialog> createState() => _EditBinDialogState();
+}
+
+class _EditBinDialogState extends State<_EditBinDialog> {
+  List<Map<String, String>>? _bins;
+  String? _selectedId;
+  bool _isFetching = true;
+  bool _isEditing = false; // step 2: edit form
+  bool _isSaving = false;
+  String? _errorMsg;
+
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
+  String _status = 'online';
+
+  static const _statusOptions = ['online', 'offline', 'maintenance'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBins();
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _locationCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadBins() async {
+    try {
+      final list = await FirestoreService().getBinsList();
+      setState(() { _bins = list; _isFetching = false; });
+    } catch (_) {
+      setState(() { _isFetching = false; _errorMsg = 'Failed to load bins.'; });
+    }
+  }
+
+  void _openEditForm() {
+    final bin = _bins!.firstWhere((b) => b['id'] == _selectedId);
+    _nameCtrl.text = bin['name'] ?? '';
+    _locationCtrl.text = bin['location'] ?? '';
+    _status = bin['status'] ?? 'online';
+    setState(() { _isEditing = true; _errorMsg = null; });
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _isSaving = true; _errorMsg = null; });
+    try {
+      await FirestoreService().updateBinDetails(
+        binId: _selectedId!,
+        name: _nameCtrl.text.trim(),
+        location: _locationCtrl.text.trim(),
+        status: _status,
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Bin "${_nameCtrl.text.trim()}" updated'),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (_) {
+      setState(() { _isSaving = false; _errorMsg = 'Failed to save changes. Please try again.'; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = AppColors.accent(context);
+
+    if (_isFetching) {
+      return AlertDialog(
+        backgroundColor: AppColors.surface(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: SizedBox(height: 80, child: Center(child: CircularProgressIndicator(color: accent))),
+      );
+    }
+
+    return AlertDialog(
+      backgroundColor: AppColors.surface(context),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: _dialogTitle(context, _isEditing ? 'Edit Details' : 'Edit Bin', Icons.edit_rounded, accent),
+      content: SizedBox(
+        width: 320,
+        child: _isEditing ? _buildEditForm(context, accent) : _buildSelectView(context),
+      ),
+      actions: _isEditing ? _editActions(context, accent) : _selectActions(context),
+    );
+  }
+
+  Widget _buildSelectView(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select the bin you want to edit:',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textSecondary(context)),
+        ),
+        const SizedBox(height: 12),
+        if (_bins == null || _bins!.isEmpty)
+          Text('No bins found.', style: TextStyle(color: AppColors.textSecondary(context), fontWeight: FontWeight.w600))
+        else
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 260),
+            child: SingleChildScrollView(
+              child: Column(
+                children: _bins!.map((bin) {
+                  final isSelected = bin['id'] == _selectedId;
+                  final accent = AppColors.accent(context);
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedId = bin['id']),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected ? accent.withValues(alpha: 0.1) : AppColors.background(context),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected ? accent : AppColors.textSecondary(context).withValues(alpha: 0.2),
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, color: isSelected ? accent : AppColors.textSecondary(context), size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(bin['name']!,
+                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary(context))),
+                                Text('${bin['id']} · ${bin['location']}',
+                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: AppColors.textSecondary(context))),
+                              ],
+                            ),
+                          ),
+                          if (isSelected) Icon(Icons.check_circle_rounded, color: accent, size: 18),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        if (_errorMsg != null) ...[
+          const SizedBox(height: 10),
+          Text(_errorMsg!, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildEditForm(BuildContext context, Color accent) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Bin ID (read-only badge)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.background(context),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.textSecondary(context).withValues(alpha: 0.2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Bin ID', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary(context))),
+                const SizedBox(height: 2),
+                Text(_selectedId!, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary(context))),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _binTextField(context, controller: _nameCtrl, label: 'Name', hint: 'e.g. Cafeteria Block C',
+            validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null),
+          const SizedBox(height: 12),
+          _binTextField(context, controller: _locationCtrl, label: 'Location', hint: 'e.g. Food Court',
+            validator: (v) => v == null || v.trim().isEmpty ? 'Location is required' : null),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: _status,
+            decoration: _inputDecoration(context, 'Status', accent),
+            dropdownColor: AppColors.surface(context),
+            style: TextStyle(color: AppColors.textPrimary(context), fontWeight: FontWeight.w600, fontSize: 14),
+            items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+            onChanged: (v) => setState(() => _status = v ?? 'online'),
+          ),
+          if (_errorMsg != null) ...[
+            const SizedBox(height: 12),
+            Text(_errorMsg!, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _selectActions(BuildContext context) => [
+    TextButton(
+      onPressed: () => Navigator.pop(context),
+      child: Text('Cancel', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textSecondary(context))),
+    ),
+    TextButton(
+      onPressed: _selectedId == null ? null : _openEditForm,
+      child: Text('Next', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.accent(context))),
+    ),
+  ];
+
+  List<Widget> _editActions(BuildContext context, Color accent) => [
+    TextButton(
+      onPressed: _isSaving ? null : () => setState(() { _isEditing = false; _errorMsg = null; }),
+      child: Text('Back', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textSecondary(context))),
+    ),
+    TextButton(
+      onPressed: _isSaving ? null : _save,
+      child: _isSaving
+          ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: accent))
+          : Text('Save', style: TextStyle(fontWeight: FontWeight.w800, color: accent)),
+    ),
+  ];
+}
+
+// ─── DEMO RESTRICTED ──────────────────────────────────────────────────────────
+
+void _showDemoRestrictedDialog(BuildContext context) {
+  final accent = AppColors.accent(context);
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: AppColors.surface(context),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(color: Colors.purpleAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.science_rounded, color: Colors.purpleAccent),
+          ),
+          const SizedBox(width: 12),
+          Text('Demo Mode', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary(context))),
+        ],
+      ),
+      content: Text(
+        'Bin management is not available in Demo Mode. Please log in with a real account to add or remove bins.',
+        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textSecondary(context)),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('OK', style: TextStyle(fontWeight: FontWeight.w800, color: accent)),
+        ),
+      ],
+    ),
+  );
+}
+
+// ─── SHARED DIALOG HELPERS ────────────────────────────────────────────────────
+
+Widget _dialogTitle(BuildContext context, String text, IconData icon, Color color) {
+  return Row(
+    children: [
+      Container(
+        width: 40, height: 40,
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+        child: Icon(icon, color: color),
+      ),
+      const SizedBox(width: 12),
+      Text(text, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary(context))),
+    ],
+  );
+}
+
+InputDecoration _inputDecoration(BuildContext context, String label, Color accent) {
+  return InputDecoration(
+    labelText: label,
+    labelStyle: TextStyle(color: AppColors.textSecondary(context), fontWeight: FontWeight.w600, fontSize: 13),
+    filled: true,
+    fillColor: AppColors.background(context),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: AppColors.textSecondary(context).withValues(alpha: 0.2))),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: AppColors.textSecondary(context).withValues(alpha: 0.2))),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: accent)),
+    errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.redAccent)),
+    focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.redAccent)),
+  );
+}
+
+Widget _binTextField(
+  BuildContext context, {
+  required TextEditingController controller,
+  required String label,
+  required String hint,
+  required String? Function(String?) validator,
+}) {
+  final accent = AppColors.accent(context);
+  return TextFormField(
+    controller: controller,
+    style: TextStyle(color: AppColors.textPrimary(context), fontWeight: FontWeight.w600, fontSize: 14),
+    decoration: _inputDecoration(context, label, accent).copyWith(
+      hintText: hint,
+      hintStyle: TextStyle(color: AppColors.textSecondary(context).withValues(alpha: 0.5), fontSize: 13),
+    ),
+    validator: validator,
+  );
+}
+
+// ─── DELETE ACCOUNT ───────────────────────────────────────────────────────────
 
 void _showDeleteAccountDialog(BuildContext context) {
   showDialog(

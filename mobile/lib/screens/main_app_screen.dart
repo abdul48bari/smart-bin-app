@@ -3,6 +3,7 @@ import '../pages/home_page.dart';
 import '../pages/bins_page.dart';
 import '../pages/analytics_page.dart';
 import '../pages/account_page.dart';
+import '../pages/suggestions_page.dart';
 import '../utils/app_colors.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/voice_assistant_modal.dart';
@@ -27,6 +28,8 @@ class _MainAppScreenState extends State<MainAppScreen> {
       case 2:
         return const AnalyticsPage();
       case 3:
+        return const SuggestionsPage();
+      case 4:
         return const AccountPage();
       default:
         return const HomePage();
@@ -69,14 +72,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
             children: [
               _buildNavItem(0, Icons.home_rounded, 'Home', accent, isDark),
               _buildNavItem(1, Icons.delete_rounded, 'Bins', accent, isDark),
-              _buildNavItem(
-                2,
-                Icons.bar_chart_rounded,
-                'Analytics',
-                accent,
-                isDark,
-              ),
-              _buildNavItem(3, Icons.person_rounded, 'Account', accent, isDark),
+              _buildNavItem(2, Icons.bar_chart_rounded, 'Analytics', accent, isDark),
+              _buildNavItem(3, Icons.tips_and_updates_rounded, 'Tips', accent, isDark),
+              _buildNavItem(4, Icons.person_rounded, 'Account', accent, isDark),
             ],
           ),
         ),
@@ -98,7 +96,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? accent.withValues(alpha:0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),

@@ -83,12 +83,69 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 ),
               ),
 
-              // PIECES BY TYPE
+              // COMBINED SECTION LABEL
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.layers_rounded, color: accent, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        "All Bins Combined",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: accent,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // PIECES BY TYPE (combined)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                   child: _PiecesBreakdownCard(
                     binId: _binId,
+                    filter: _selectedFilter,
+                    accent: accent,
+                    accentSoft: accentSoft,
+                    colors: _subBinColors,
+                  ),
+                ),
+              ),
+
+              // PER-BIN SECTION LABEL
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded, color: accent, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Individual Bin Breakdown",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: accent,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // PER-BIN PIECES COLLECTED
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  child: _PerBinPiecesSection(
                     filter: _selectedFilter,
                     accent: accent,
                     accentSoft: accentSoft,
@@ -392,7 +449,7 @@ class _TotalPiecesCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Pieces Collected",
+                            "Total Pieces Collected",
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -401,7 +458,7 @@ class _TotalPiecesCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            "All bins combined",
+                            "Across all bins combined",
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
@@ -975,6 +1032,239 @@ class _TopPerformersCard extends StatelessWidget {
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+// PER-BIN PIECES SECTION
+class _PerBinPiecesSection extends StatefulWidget {
+  final TimeFilter filter;
+  final Color accent;
+  final Color accentSoft;
+  final Map<String, Color> colors;
+
+  const _PerBinPiecesSection({
+    required this.filter,
+    required this.accent,
+    required this.accentSoft,
+    required this.colors,
+  });
+
+  @override
+  State<_PerBinPiecesSection> createState() => _PerBinPiecesSectionState();
+}
+
+class _PerBinPiecesSectionState extends State<_PerBinPiecesSection> {
+  String? _selectedBinId;
+
+  String _shortBinName(String name) {
+    if (name.length <= 12) return name;
+    final parts = name.split(' ');
+    if (parts.length >= 2) return '${parts[0]} ${parts[1][0]}.';
+    return name.substring(0, 10);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final firestoreService = FirestoreService();
+
+    return Consumer<AppStateProvider>(
+      builder: (context, appState, _) {
+        return StreamBuilder<QuerySnapshot>(
+          stream: appState.binsStream,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const SizedBox.shrink();
+
+            final bins = snapshot.data!.docs.map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return {
+                'id': doc.id,
+                'name': (data['name'] as String?) ?? doc.id,
+              };
+            }).toList();
+
+            if (bins.isEmpty) return const SizedBox.shrink();
+
+            // Default to first bin
+            _selectedBinId ??= bins.first['id'] as String;
+
+            return _AnimatedIn(
+              delayMs: 120,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.surface(context),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: AppShadows.elevation(context, 'large'),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Row(
+                      children: [
+                        Icon(Icons.delete_outline_rounded, color: widget.accent),
+                        const SizedBox(width: 10),
+                        Text(
+                          "Pieces by Bin",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Pieces collected per individual bin",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary(context),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Bin selector chips
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: bins.map((bin) {
+                          final id = bin['id'] as String;
+                          final name = bin['name'] as String;
+                          final isSelected = _selectedBinId == id;
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedBinId = id),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeOutCubic,
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? widget.accent : AppColors.surfaceSecondary(context),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                _shortBinName(name),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: isSelected ? Colors.white : AppColors.textSecondary(context),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Chart or no-data for selected bin
+                    StreamBuilder<Map<String, int>?>(
+                      stream: firestoreService.getPerBinPieceCount(
+                        _selectedBinId!,
+                        widget.filter,
+                      ),
+                      builder: (context, pieceSnapshot) {
+                        if (!pieceSnapshot.hasData && pieceSnapshot.connectionState == ConnectionState.waiting) {
+                          return SizedBox(
+                            height: 80,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: widget.accent,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        }
+
+                        final data = pieceSnapshot.data;
+
+                        if (data == null || data.values.every((v) => v == 0)) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(vertical: 28),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceSecondary(context),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.hourglass_empty_rounded,
+                                    size: 32,
+                                    color: AppColors.textSecondary(context),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    "No data available yet",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textSecondary(context),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "This bin hasn't recorded any\npiece collection events",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textSecondary(context).withValues(alpha: 0.7),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        // Show total for this bin
+                        final total = data.values.fold(0, (a, b) => a + b);
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                TweenAnimationBuilder<int>(
+                                  tween: IntTween(begin: 0, end: total),
+                                  duration: const Duration(milliseconds: 400),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (context, value, _) => Text(
+                                    "$value pieces",
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      color: widget.accent,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  " total",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary(context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            VerticalBarChart(data: data, colors: widget.colors),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
