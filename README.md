@@ -213,6 +213,8 @@ Alerts are automatically created by Cloud Functions when sensors report:
 | **Camera Module** | Captures waste images for AI-based waste category classification |
 | **PWM DC Motor** | Controls bin lid opening and compaction mechanism |
 
+> The TFLite waste classification model (`waste_classifier.tflite`) was trained and exported by [@DanTan05](https://github.com/DanTan05). The full training pipeline, dataset preparation, and model evaluation scripts are available at: [DanTan05/smart-bin-classification-pipeline](https://github.com/DanTan05/smart-bin-classification-pipeline)
+
 ---
 
 ## System Architecture
@@ -292,6 +294,10 @@ smart-bin-app/
 │   │                                  ShimmerLoading, VoiceAssistantModal
 │   └── build/web/                 ← Compiled web output (deployed to Vercel, not committed)
 │
+├── hardware/                      ← Raspberry Pi hardware code
+│   ├── smart_bin_program_final.py ← Main controller script (sensors, camera, Firebase)
+│   └── waste_classifier.tflite   ← TFLite model for waste category classification
+│
 ├── functions/
 │   └── index.js                   ← Cloud Functions: /ingestBinEvent, /resolveAlert
 │
@@ -370,6 +376,7 @@ firebase deploy --only functions --project smart-bin-app-uowd
 | **Umar** | Mobile application UI design and logic |
 | **Asim** | Backend API, Firestore architecture, and Cloud Functions |
 | **Amer** | System architecture design and review |
+| **Danish Tanwar** | AI model training (MobileNetV2 / TFLite) and Raspberry Pi hardware integration |
 
 ---
 
