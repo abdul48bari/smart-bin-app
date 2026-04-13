@@ -301,7 +301,6 @@ smart-bin-app/
 │       └── components/            ← All 20 website components
 │
 ├── Reclevo.apk                    ← Latest Android build
-├── CLAUDE.md                      ← Full developer reference guide
 └── README.md                      ← This file
 ```
 
