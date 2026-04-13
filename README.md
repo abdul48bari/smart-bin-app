@@ -11,7 +11,7 @@
 
 <br/>
 
-### [Live Web App](https://smart-bin-app-eta.vercel.app) &nbsp;·&nbsp; [Marketing Website](https://reclevo-website-azure.vercel.app) &nbsp;·&nbsp; [Download APK](./Reclevo.apk)
+### [Live Web App](https://smart-bin-app-eta.vercel.app) &nbsp;·&nbsp; [Marketing Website](https://reclevo-website-azure.vercel.app) &nbsp;·&nbsp; [Watch on YouTube](https://youtu.be/KTSVxW0-n60)
 
 </div>
 
@@ -21,6 +21,7 @@
 
 - [Overview](#overview)
 - [Live Links](#live-links)
+- [Demo Video](#demo-video)
 - [App Features](#app-features)
 - [Tech Stack](#tech-stack)
 - [Hardware Stack](#hardware-stack)
@@ -55,11 +56,20 @@ The project is composed of three components:
 |---|---|
 | **Admin Dashboard (Web)** | https://smart-bin-app-eta.vercel.app |
 | **Marketing Website** | https://reclevo-website-azure.vercel.app |
-| **Android APK** | [`Reclevo.apk`](./Reclevo.apk) — download and install directly |
+| **Android APK** | [GitHub Releases](https://github.com/abdul48bari/smart-bin-app/releases) — download and install directly |
+| **Demo Video** | https://youtu.be/KTSVxW0-n60 |
 
 > **Try it instantly:** Click "Try Demo Mode" on the login screen — no account needed. The demo simulates 7 live bins with real-time data, charts, alerts, voice assistant, and all features fully enabled.
 >
 > **Browser note:** The voice assistant requires **Chrome or Edge** (Web Speech API).
+
+---
+
+## Demo Video
+
+Watch a full walkthrough of the Reclevo system — live bin monitoring, alerts, analytics, voice assistant, and the physical hardware in action.
+
+**[Watch on YouTube →](https://youtu.be/KTSVxW0-n60)**
 
 ---
 
