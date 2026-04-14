@@ -1,6 +1,6 @@
 <div align="center">
 
-# Reclevo — Smart Bin Management System
+# Reclevo: Smart Bin Management System
 
 **An IoT-powered smart waste bin monitoring and management platform**
 
@@ -56,10 +56,10 @@ The project is composed of three components:
 |---|---|
 | **Admin Dashboard (Web)** | https://smart-bin-app-eta.vercel.app |
 | **Marketing Website** | https://reclevo-website-azure.vercel.app |
-| **Android APK** | [GitHub Releases](https://github.com/abdul48bari/smart-bin-app/releases) — download and install directly |
+| **Android APK** | [GitHub Releases](https://github.com/abdul48bari/smart-bin-app/releases), download and install directly |
 | **Demo Video** | https://youtu.be/KTSVxW0-n60 |
 
-> **Try it instantly:** Click "Try Demo Mode" on the login screen — no account needed. The demo simulates 7 live bins with real-time data, charts, alerts, voice assistant, and all features fully enabled.
+> **Try it instantly:** Click "Try Demo Mode" on the login screen, no account needed. The demo simulates 7 live bins with real-time data, charts, alerts, voice assistant, and all features fully enabled.
 >
 > **Browser note:** The voice assistant requires **Chrome or Edge** (Web Speech API).
 
@@ -67,7 +67,7 @@ The project is composed of three components:
 
 ## Demo Video
 
-Watch a full walkthrough of the Reclevo system — live bin monitoring, alerts, analytics, voice assistant, and the physical hardware in action.
+Watch a full walkthrough of the Reclevo system covering live bin monitoring, alerts, analytics, voice assistant, and the physical hardware in action.
 
 **[Watch on YouTube →](https://youtu.be/KTSVxW0-n60)**
 
@@ -75,24 +75,24 @@ Watch a full walkthrough of the Reclevo system — live bin monitoring, alerts, 
 
 ## App Features
 
-### Home Tab — Dashboard Overview
+### Home Tab: Dashboard Overview
 - Real-time system-wide overview of all registered bins
-- Cross-bin **safety alert banner** with live unresolved alert count — tappable to drill into details
+- Cross-bin **safety alert banner** with live unresolved alert count, tap to drill into details
 - Bin status summary cards (online / offline counts, fill levels)
 - Shimmer skeleton loading for smooth data-fetching experience
 - Fully theme-aware (dark and light mode)
 
-### Bins Tab — Live Bin Monitoring
+### Bins Tab: Live Bin Monitoring
 - Complete list of all registered smart bins, **naturally sorted** by name (bin-001 → bin-002 → bin-010)
 - System health score card (online / offline / maintenance counts)
 - Per-bin cards showing live status badge and unresolved alert count
 - Tap any bin card to open its full **alert history screen**
 - Long-press a bin to change its status (online / offline / maintenance)
 
-### Analytics Tab — Waste Data Insights
+### Analytics Tab: Waste Data Insights
 - **Time filter toggle**: Day / Week / Month
-- **Piece count chart** — horizontal bar chart showing waste items collected per category across all bins
-- **Full-count chart** — vertical bar chart showing how many times each sub-bin was completely filled
+- **Piece count chart**, a horizontal bar chart showing waste items collected per category across all bins
+- **Full-count chart**, a vertical bar chart showing how many times each sub-bin was completely filled
 - Per-bin breakdown section with individual bin analytics
 - Sub-bin colour coding consistent across all charts:
 
@@ -104,8 +104,8 @@ Watch a full walkthrough of the Reclevo system — live bin monitoring, alerts, 
   | Cans | Amber |
   | Mixed | Purple |
 
-### Tips Tab — Recycling Guidance
-- Live recycling tips **driven by real fill-level data** — only bins above 20% fill appear
+### Tips Tab: Recycling Guidance
+- Live recycling tips **driven by real fill-level data**, showing only bins above 20% fill
 - One tip card per waste type (up to 5 cards: Plastic, Paper, Organic, Cans, Mixed)
 - Each card shows bin name, location, current fill level, and 3 actionable recycling tips
 - Tips are **UAE-specific** and referenced against:
@@ -113,17 +113,17 @@ Watch a full walkthrough of the Reclevo system — live bin monitoring, alerts, 
   - COP28 UAE climate commitments
   - UN SDGs 2, 11, 12, 13, and 15
 - Pull-to-refresh rotates to a new tip set (3 sets per waste type, cycling on each refresh)
-- **Save and dismiss** individual tip cards — preferences persisted across sessions via SharedPreferences
+- **Save and dismiss** individual tip cards, with preferences persisted across sessions via SharedPreferences
 
-### Account Tab — Settings & Bin Management
+### Account Tab: Settings & Bin Management
 **Bin Management** (fully live):
-- **Add New Bin** — register a new bin with a validated ID, name, location, and status. Duplicate IDs are detected and rejected immediately
-- **Remove Bin** — select from a live sorted list, confirm deletion, and the bin along with all its sub-bin data is batch-removed from Firestore
-- **Edit Bin Details** — select any bin, update its name, location, or status through a pre-filled form
+- **Add New Bin**: register a new bin with a validated ID, name, location, and status. Duplicate IDs are detected and rejected immediately
+- **Remove Bin**: select from a live sorted list, confirm deletion, and the bin along with all its sub-bin data is batch-removed from Firestore
+- **Edit Bin Details**: select any bin, update its name, location, or status through a pre-filled form
 
 **App Settings:**
 - Dark / Light Mode toggle with persistent preference
-- Demo Mode toggle — switch between simulated and live Firestore data at any time
+- Demo Mode toggle to switch between simulated and live Firestore data at any time
 - Notifications, Language, Export Data settings (roadmap)
 
 **Security (roadmap):** Change Password, Change Email, 2FA, Trusted Devices, Activity Log, API Keys
@@ -143,7 +143,7 @@ Watch a full walkthrough of the Reclevo system — live bin monitoring, alerts, 
   | Analytics | *"How many items were collected this week?"* |
   | Help | *"What can you do?"* |
 
-- Built on the **Web Speech API** — requires Chrome or Edge
+- Built on the **Web Speech API**, requires Chrome or Edge
 - Includes speech-to-text normalisation to handle common misrecognitions
 
 ### Safety Alert System
@@ -164,9 +164,9 @@ Alerts are automatically created by Cloud Functions when sensors report:
 
 ### Authentication & Access
 - Email / password login via Firebase Auth
-- **Demo Mode** for unauthenticated exploration — full functionality without credentials
+- **Demo Mode** for unauthenticated exploration, with full functionality and no credentials required
 - Animated splash screen on launch
-- Secure routing — unauthenticated users redirected to login automatically
+- Secure routing, unauthenticated users are redirected to login automatically
 
 ---
 
@@ -176,7 +176,7 @@ Alerts are automatically created by Cloud Functions when sensors report:
 
 | Technology | Purpose |
 |---|---|
-| **Flutter** (Dart) | Cross-platform framework — compiled to web (Vercel) and Android APK |
+| **Flutter** (Dart) | Cross-platform framework, compiled to web (Vercel) and Android APK |
 | **Firebase Firestore** | Real-time NoSQL database for bins, sub-bins, alerts, and events |
 | **Firebase Auth** | Secure email/password authentication |
 | **Firebase Cloud Messaging** | Push notifications to Android devices |
@@ -195,7 +195,7 @@ Alerts are automatically created by Cloud Functions when sensors report:
 
 | Technology | Purpose |
 |---|---|
-| **Next.js 14** | React framework — SSR, routing, optimised builds |
+| **Next.js 14** | React framework with SSR, routing, and optimised builds |
 | **TypeScript** | Type-safe component development |
 | **Tailwind CSS** | Utility-first styling |
 | **Framer Motion** | Page entrance and scroll animations |
@@ -216,10 +216,10 @@ Alerts are automatically created by Cloud Functions when sensors report:
 
 | Component | Role |
 |---|---|
-| **Raspberry Pi 5** | Main controller — runs Python, communicates with all sensors, sends HTTP events to Cloud Functions via Wi-Fi |
+| **Raspberry Pi 5** | Main controller, runs Python, communicates with all sensors, sends HTTP events to Cloud Functions via Wi-Fi |
 | **Ultrasonic Sensor (HC-SR04)** | Measures bin fill level by calculating distance to waste surface |
-| **Gas Sensor (MQ-series)** | Detects harmful gases — triggers alert when reading >= 500 PPM |
-| **Moisture Detector (LM393)** | Detects liquid or moisture inside the bin — triggers alert at >= 70% |
+| **Gas Sensor (MQ-series)** | Detects harmful gases, triggers an alert when reading >= 500 PPM |
+| **Moisture Detector (LM393)** | Detects liquid or moisture inside the bin, triggers an alert at >= 70% |
 | **Camera Module** | Captures waste images for AI-based waste category classification |
 | **PWM DC Motor** | Controls bin lid opening and compaction mechanism |
 
@@ -275,14 +275,14 @@ The marketing website is a separate **Next.js 14** application, deployed indepen
 
 The website presents Reclevo as a product with the following sections:
 
-- **Hero** — animated headline with a letter-scramble effect and an interactive 3D smart bin model
-- **About** — product story with a word-by-word blur animation
-- **How It Works** — step-by-step overview of the bin-to-dashboard flow
-- **Features** — interactive cards with a mouse-tracking spotlight effect
-- **Tech Stack** — visual overview of all technologies used
-- **System Architecture** — interactive hardware/software stack diagram with animated connection indicators and custom schematic SVG drawings for each hardware component
-- **App Preview** — screenshots of the Flutter dashboard with a WebGL particle background
-- **Team** — team member cards
+- **Hero**: animated headline with a letter-scramble effect and an interactive 3D smart bin model
+- **About**: product story with a word-by-word blur animation
+- **How It Works**: step-by-step overview of the bin-to-dashboard flow
+- **Features**: interactive cards with a mouse-tracking spotlight effect
+- **Tech Stack**: visual overview of all technologies used
+- **System Architecture**: interactive hardware/software stack diagram with animated connection indicators and custom schematic SVG drawings for each hardware component
+- **App Preview**: screenshots of the Flutter dashboard with a WebGL particle background
+- **Team**: team member cards
 
 ---
 
@@ -316,7 +316,6 @@ smart-bin-app/
 │       ├── app/page.tsx           ← Page composition
 │       └── components/            ← All 20 website components
 │
-├── Reclevo.apk                    ← Latest Android build
 └── README.md                      ← This file
 ```
 
@@ -392,16 +391,16 @@ firebase deploy --only functions --project smart-bin-app-uowd
 
 ## Acknowledgements
 
-- [UAE Circular Economy Policy 2021–2031](https://u.ae/en/about-the-uae/strategies-initiatives-and-awards/strategies-plans-and-visions/environment-and-energy/circular-economy-policy) — sustainability targets referenced in the Tips tab
-- [COP28 UAE](https://www.cop28.com) — climate commitments referenced in recycling guidance
-- [UN Sustainable Development Goals](https://sdgs.un.org/goals) — SDGs 2, 11, 12, 13, 15 referenced in tip content
-- [Emirates Environmental Group (EEG)](https://www.eeg.ae) — UAE-specific collection drive information
+- [UAE Circular Economy Policy 2021–2031](https://u.ae/en/about-the-uae/strategies-initiatives-and-awards/strategies-plans-and-visions/environment-and-energy/circular-economy-policy), sustainability targets referenced in the Tips tab
+- [COP28 UAE](https://www.cop28.com), climate commitments referenced in recycling guidance
+- [UN Sustainable Development Goals](https://sdgs.un.org/goals), SDGs 2, 11, 12, 13, 15 referenced in tip content
+- [Emirates Environmental Group (EEG)](https://www.eeg.ae), UAE-specific collection drive information
 
 ---
 
 <div align="center">
 
-**Reclevo** — Built for a cleaner, smarter campus.
+**Reclevo** | Built for a cleaner, smarter campus.
 
 <br/>
 
