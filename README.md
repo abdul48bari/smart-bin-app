@@ -409,7 +409,9 @@ firebase deploy --only functions --project smart-bin-app-uowd
 
 <div align="center">
 
-🇦🇪 &nbsp; **Built with pride in the United Arab Emirates** &nbsp; 🇦🇪
+<img src="https://flagicons.lipis.dev/flags/4x3/ae.svg" width="48" alt="UAE Flag" />
+
+**Built with pride in the United Arab Emirates**
 
 *In solidarity with the UAE and its people.*
 
