@@ -403,4 +403,14 @@ firebase deploy --only functions --project smart-bin-app-uowd
 
 **Reclevo** — Built for a cleaner, smarter campus.
 
+<br/>
+
+---
+
+<div align="center">
+
+🇦🇪 &nbsp; **Built with pride in the United Arab Emirates** &nbsp; 🇦🇪
+
+*In solidarity with the UAE and its people.*
+
 </div>
